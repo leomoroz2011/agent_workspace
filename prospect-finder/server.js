@@ -1,14 +1,11 @@
 require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
-const Anthropic = require('@anthropic-ai/sdk');
 const path = require('path');
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
-
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const NEIGHBORHOODS = {
   'inner-sunset': 'Inner Sunset San Francisco CA',
@@ -25,7 +22,7 @@ const BUSINESS_LABELS = {
 
 const SOCIAL_OR_DIRECTORY_DOMAINS = [
   'facebook.com', 'instagram.com', 'yelp.com', 'tripadvisor.com',
-  'google.com', 'foursquare.com', 'nextdoor.com'
+  'google.com', 'foursquare.com', 'nextdoor.com', 'linktr.ee'
 ];
 
 function isSocialOrDirectory(url) {
@@ -33,15 +30,84 @@ function isSocialOrDirectory(url) {
   return SOCIAL_OR_DIRECTORY_DOMAINS.some(d => url.includes(d));
 }
 
-// Health check — confirms API keys are present
+// Rule-based website analysis — no AI needed
+function analyzeHtml(html, url) {
+  const lower = html.toLowerCase();
+  const flaws = [];
+
+  if (!lower.includes('viewport'))
+    flaws.push('not mobile-friendly (no viewport tag)');
+
+  const hasBooking = ['book', 'appointment', 'schedule', 'reserv', 'calendly', 'acuity', 'squareup'].some(kw => lower.includes(kw));
+  if (!hasBooking)
+    flaws.push('no online booking or scheduling');
+
+  const hasContact = ['contact', 'tel:', 'mailto:', 'phone', 'call us'].some(kw => lower.includes(kw));
+  if (!hasContact)
+    flaws.push('no contact info visible');
+
+  if (lower.includes('cellpadding') || lower.includes('cellspacing'))
+    flaws.push('outdated table-based layout');
+
+  if (!lower.includes('<nav') && !lower.includes('navigation') && !lower.includes('menu'))
+    flaws.push('no clear navigation');
+
+  const hasModernMeta = lower.includes('og:') || lower.includes('twitter:') || lower.includes('schema');
+  if (!hasModernMeta)
+    flaws.push('missing modern SEO/social meta tags');
+
+  // Score: start at 10, subtract for each flaw
+  const score = Math.max(1, Math.round(10 - flaws.length * 1.6));
+
+  return {
+    score,
+    flaws,
+    eligible: score <= 6,
+    summary: flaws.length === 0 ? 'Looks decent' : flaws.slice(0, 2).join(', ')
+  };
+}
+
+// Template-based cold email in Leo's voice — no AI needed
+function buildEmail(prospect, businessType, calendlyUrl) {
+  const name = prospect.name;
+  const link = calendlyUrl || 'https://calendly.com/leomoroz09';
+  const typeLabel = businessType === 'barbershops' ? 'barbershop'
+    : businessType === 'pet-groomers' ? 'pet groomer' : 'cafe';
+
+  if (!prospect.hasRealWebsite && !prospect.hasSocialOnly) {
+    // No website at all
+    return {
+      subject: `Quick question for ${name}`,
+      body: `Hey,\n\nLooked you up and couldn't find a website for ${name} — figured I'd reach out.\n\nI build websites for ${typeLabel}s in SF and I'm doing my first few for free to build my portfolio. All I ask for back is a testimonial if you like what I make.\n\nWould you be down for a quick 15-min call? ${link}\n\n— Leo`
+    };
+  }
+
+  if (prospect.hasSocialOnly) {
+    // Only social media
+    return {
+      subject: `${name} — quick thought`,
+      body: `Hey,\n\nFound ${name} on social but noticed there's no actual website.\n\nI build websites for ${typeLabel}s in SF and I'm taking on a couple for free right now — just need a testimonial back if you like it. No catch.\n\nIf you're curious, grab a quick call here: ${link}\n\n— Leo`
+    };
+  }
+
+  // Has a real website but with flaws
+  const topFlaw = (prospect.websiteFlaws || [])[0];
+  const flawLine = topFlaw
+    ? `noticed ${topFlaw}`
+    : 'noticed a few things that could be improved';
+
+  return {
+    subject: `Checked out ${name}'s website`,
+    body: `Hey,\n\nChecked out ${name}'s site — ${flawLine}.\n\nI build websites for ${typeLabel}s in SF and I'd be down to redo yours for free. I'm building my portfolio and just need a testimonial back if you're happy with it.\n\nIf that sounds interesting, here's a quick call link: ${link}\n\n— Leo`
+  };
+}
+
+// Health check
 app.get('/api/health', (req, res) => {
-  res.json({
-    googlePlaces: !!process.env.FOURSQUARE_API_KEY,
-    anthropic: !!process.env.ANTHROPIC_API_KEY
-  });
+  res.json({ foursquare: !!process.env.FOURSQUARE_API_KEY });
 });
 
-// Search Foursquare Places for businesses in selected neighborhoods
+// Search Foursquare for businesses
 app.post('/api/search', async (req, res) => {
   const { businessType, neighborhoods } = req.body;
 
@@ -79,10 +145,9 @@ app.post('/api/search', async (req, res) => {
             address: p.location?.formatted_address || '',
             website: p.website || null,
             phone: p.tel || '',
-            // Foursquare rates 0-10; normalize to 0-5 to match scoring logic
-            rating: p.rating ? p.rating / 2 : null,
+            rating: p.rating ? p.rating / 2 : null, // normalize 0-10 → 0-5
             reviewCount: p.stats?.total_ratings || 0,
-            reviews: [] // fetched per-business in /api/analyze
+            reviews: []
           });
         }
       }
@@ -95,39 +160,33 @@ app.post('/api/search', async (req, res) => {
   }
 });
 
-// Analyze one business: fetch tips, website quality check + conversion score
+// Analyze one business
 app.post('/api/analyze', async (req, res) => {
   const { business } = req.body;
 
-  // Fetch Foursquare tips (reviews) for this place
-  let reviews = business.reviews || [];
-  if (business.id && !reviews.length && process.env.FOURSQUARE_API_KEY) {
+  // Fetch tips/reviews from Foursquare
+  let reviews = [];
+  if (business.id && process.env.FOURSQUARE_API_KEY) {
     try {
-      const tipsRes = await axios.get(
+      const { data } = await axios.get(
         `https://api.foursquare.com/v3/places/${business.id}/tips`,
         {
           params: { limit: 10, fields: 'text' },
           headers: { 'Authorization': process.env.FOURSQUARE_API_KEY, 'Accept': 'application/json' }
         }
       );
-      reviews = (tipsRes.data.results || []).map(t => t.text || '').filter(Boolean);
-    } catch {
-      reviews = [];
-    }
+      reviews = (data.results || []).map(t => t.text || '').filter(Boolean);
+    } catch { /* no reviews available */ }
   }
 
-  const businessWithReviews = { ...business, reviews };
-
   const effectiveWebsite = business.website && !isSocialOrDirectory(business.website)
-    ? business.website
-    : null;
-
-  const hasSocialOnly = business.website && isSocialOrDirectory(business.website);
+    ? business.website : null;
+  const hasSocialOnly = !!(business.website && isSocialOrDirectory(business.website));
 
   let websiteResult = null;
 
   if (effectiveWebsite) {
-    let htmlSnippet = '';
+    let html = '';
     try {
       const r = await axios.get(effectiveWebsite, {
         timeout: 7000,
@@ -135,58 +194,26 @@ app.post('/api/analyze', async (req, res) => {
         maxRedirects: 3,
         maxContentLength: 300000
       });
-      htmlSnippet = (r.data || '').toString().slice(0, 3500);
-    } catch {
-      htmlSnippet = '';
-    }
+      html = (r.data || '').toString().slice(0, 5000);
+    } catch { /* site unreachable */ }
 
-    try {
-      const msg = await anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 350,
-        messages: [{
-          role: 'user',
-          content: `Rate this small business website quality on a 1-10 scale (10=excellent modern site, 1=broken/terrible/no content).
-
-${htmlSnippet
-  ? `HTML (first 3500 chars):\n${htmlSnippet}`
-  : `URL: ${effectiveWebsite}\nNote: Could not fetch page content — site may be slow or blocking.`}
-
-Look for red flags: no mobile viewport meta tag, no online booking or contact form, outdated HTML structure (tables for layout, font tags), missing or broken navigation, no clear service info, generic template text, no social proof.
-
-Reply with ONLY raw JSON, no markdown or backticks:
-{"score":5,"flaws":["no mobile viewport","no booking"],"eligible":true,"summary":"Outdated, no booking"}`
-        }]
-      });
-
-      const text = msg.content[0].text.trim()
-        .replace(/^```json\n?/, '').replace(/\n?```$/, '');
-      websiteResult = JSON.parse(text);
-    } catch {
-      websiteResult = {
-        score: 5,
-        flaws: ['Could not fully analyze'],
-        eligible: true,
-        summary: 'Analysis incomplete'
-      };
-    }
+    websiteResult = html
+      ? analyzeHtml(html, effectiveWebsite)
+      : { score: 4, flaws: ['website not loading or unreachable'], eligible: true, summary: 'Site unreachable' };
   }
 
-  // Scan reviews/tips for mentions of needing a website or online presence
-  const allReviewText = reviews.join(' ').toLowerCase();
+  // Scan tips for website mentions
+  const allTipText = reviews.join(' ').toLowerCase();
   const reviewMentionsWebsite = [
     'website', 'online booking', 'book online', "can't find", 'hard to find',
     'no website', 'social media only', 'instagram only', 'not online'
-  ].some(kw => allReviewText.includes(kw));
+  ].some(kw => allTipText.includes(kw));
 
-  // Calculate conversion score
+  // Conversion score
   let conversionScore = 0;
-
   if (!business.website) {
-    // No website at all — easiest sell
     conversionScore = 80;
   } else if (hasSocialOnly) {
-    // Only has Facebook/Instagram — nearly as easy
     conversionScore = 72;
   } else {
     const q = websiteResult?.score || 5;
@@ -195,13 +222,13 @@ Reply with ONLY raw JSON, no markdown or backticks:
     else if (q <= 7) conversionScore = 30;
     else conversionScore = 10;
   }
-
   if (reviewMentionsWebsite) conversionScore += 10;
   if (business.rating && business.rating < 3.5) conversionScore += 5;
   conversionScore = Math.min(95, conversionScore);
 
   res.json({
-    ...businessWithReviews,
+    ...business,
+    reviews,
     hasRealWebsite: !!effectiveWebsite,
     hasSocialOnly,
     hasWebsite: !!business.website,
@@ -214,52 +241,12 @@ Reply with ONLY raw JSON, no markdown or backticks:
   });
 });
 
-// Generate a cold email for a single prospect
-app.post('/api/email', async (req, res) => {
+// Generate cold email from templates (no AI)
+app.post('/api/email', (req, res) => {
   const { prospect, businessType, calendlyUrl } = req.body;
-
-  let situation = '';
-  if (!prospect.hasWebsite) {
-    situation = `${prospect.name} has no website at all.${prospect.reviewMentionsWebsite ? ' Some reviewers mentioned having trouble finding them online.' : ''}`;
-  } else if (prospect.hasSocialOnly) {
-    situation = `${prospect.name} only has a Facebook or social media page — no real website.`;
-  } else {
-    const topFlaws = (prospect.websiteFlaws || []).slice(0, 3).join(', ') || 'general quality issues';
-    situation = `${prospect.name} has a website but it needs work: ${topFlaws}. Site quality: ${prospect.websiteScore}/10.`;
-  }
-
   try {
-    const msg = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 450,
-      messages: [{
-        role: 'user',
-        content: `You're ghostwriting a cold email for Leo, a 14-year-old entrepreneur in San Francisco who builds websites.
-
-Target business: ${prospect.name} (${businessType}) at ${prospect.address}
-Situation: ${situation}
-Leo's offer: He builds websites for ${businessType}s for FREE — he only asks for a testimonial if they're happy with the result. No catch, no contract.
-CTA: Book a free 15-min call at ${calendlyUrl || 'https://calendly.com/leomoroz09'}
-
-Leo's writing rules (follow these exactly):
-- Body is 4-6 sentences MAX. Short. Every sentence earns its place.
-- Casual confidence — sounds like a sharp teenager, not a marketing agency
-- First sentence is specific to THIS business (what he noticed when he looked them up)
-- Never uses: "I hope this finds you well", "I am reaching out", "I wanted to", "synergy", "leverage", "solutions"
-- Free offer is stated simply — doesn't oversell or beg
-- Ends with "— Leo" only, no last name, no title, no "Best regards"
-- Subject line: specific and low-pressure, NOT "Free Website Offer!!" style
-
-Reply with ONLY raw valid JSON, no markdown, no backticks:
-{"subject":"the subject line","body":"the email body"}`
-      }]
-    });
-
-    const text = msg.content[0].text.trim()
-      .replace(/^```json\n?/, '').replace(/\n?```$/, '');
-    res.json(JSON.parse(text));
+    res.json(buildEmail(prospect, businessType, calendlyUrl));
   } catch (err) {
-    console.error('Email gen error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -268,5 +255,5 @@ app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.ht
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`\nProspect Finder running at http://localhost:${PORT}\n`);
+  console.log(`\nProspect Finder → http://localhost:${PORT}\n`);
 });

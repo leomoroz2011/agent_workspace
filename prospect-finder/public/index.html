@@ -262,14 +262,11 @@
       try {
         const health = await fetch('/api/health').then(r => r.json());
         const el = document.getElementById('api-status');
-        if (health.googlePlaces && health.anthropic) {
-          el.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span> APIs ready';
+        if (health.foursquare) {
+          el.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span> API ready';
           el.className = 'text-xs text-green-400 flex items-center gap-1.5';
         } else {
-          const missing = [];
-          if (!health.googlePlaces) missing.push('GOOGLE_PLACES_API_KEY');
-          if (!health.anthropic) missing.push('ANTHROPIC_API_KEY');
-          el.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"></span> Missing: ' + missing.join(', ');
+          el.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"></span> Missing: FOURSQUARE_API_KEY';
           el.className = 'text-xs text-red-400 flex items-center gap-1.5';
         }
       } catch {
