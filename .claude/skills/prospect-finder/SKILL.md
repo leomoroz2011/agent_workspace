@@ -22,10 +22,10 @@ This skill helps Leo run, use, and extend the Prospect Finder tool located at `~
 
 **1. Get API keys**
 
-Google Places API:
-- Go to console.cloud.google.com
-- Create a project → Enable "Places API (New)" → Credentials → Create API Key
-- Billing must be on (free $200/month credit — Leo's usage won't come close to that)
+Foursquare Places API (free, no billing, no age restriction):
+- Go to foursquare.com/developers → sign up with email
+- Create an app → copy the API key (starts with `fsq3`)
+- Free tier: 200,000 calls/month — more than enough
 
 Anthropic API key: already exists from other projects.
 
@@ -36,7 +36,7 @@ cp .env.example .env
 ```
 Open `.env` and fill in:
 ```
-GOOGLE_PLACES_API_KEY=your_key_here
+FOURSQUARE_API_KEY=fsq3your_key_here
 ANTHROPIC_API_KEY=your_key_here
 ```
 

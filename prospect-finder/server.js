@@ -36,17 +36,17 @@ function isSocialOrDirectory(url) {
 // Health check — confirms API keys are present
 app.get('/api/health', (req, res) => {
   res.json({
-    googlePlaces: !!process.env.GOOGLE_PLACES_API_KEY,
+    googlePlaces: !!process.env.FOURSQUARE_API_KEY,
     anthropic: !!process.env.ANTHROPIC_API_KEY
   });
 });
 
-// Search Google Places for businesses in selected neighborhoods
+// Search Foursquare Places for businesses in selected neighborhoods
 app.post('/api/search', async (req, res) => {
   const { businessType, neighborhoods } = req.body;
 
-  if (!process.env.GOOGLE_PLACES_API_KEY) {
-    return res.status(400).json({ error: 'GOOGLE_PLACES_API_KEY not set in .env file' });
+  if (!process.env.FOURSQUARE_API_KEY) {
+    return res.status(400).json({ error: 'FOURSQUARE_API_KEY not set in .env file' });
   }
 
   try {
@@ -54,41 +54,35 @@ app.post('/api/search', async (req, res) => {
     const seen = new Set();
 
     for (const hood of neighborhoods) {
-      const query = `${BUSINESS_LABELS[businessType]} in ${NEIGHBORHOODS[hood]}`;
-
-      const { data } = await axios.post(
-        'https://places.googleapis.com/v1/places:searchText',
-        { textQuery: query, maxResultCount: 20 },
+      const { data } = await axios.get(
+        'https://api.foursquare.com/v3/places/search',
         {
+          params: {
+            query: BUSINESS_LABELS[businessType],
+            near: NEIGHBORHOODS[hood],
+            limit: 20,
+            fields: 'fsq_id,name,location,website,tel,rating,stats'
+          },
           headers: {
-            'Content-Type': 'application/json',
-            'X-Goog-Api-Key': process.env.GOOGLE_PLACES_API_KEY,
-            'X-Goog-FieldMask': [
-              'places.id',
-              'places.displayName',
-              'places.formattedAddress',
-              'places.websiteUri',
-              'places.rating',
-              'places.userRatingCount',
-              'places.nationalPhoneNumber',
-              'places.reviews'
-            ].join(',')
+            'Authorization': process.env.FOURSQUARE_API_KEY,
+            'Accept': 'application/json'
           }
         }
       );
 
-      for (const p of (data.places || [])) {
-        if (!seen.has(p.id)) {
-          seen.add(p.id);
+      for (const p of (data.results || [])) {
+        if (!seen.has(p.fsq_id)) {
+          seen.add(p.fsq_id);
           allBusinesses.push({
-            id: p.id,
-            name: p.displayName?.text || 'Unknown',
-            address: p.formattedAddress || '',
-            website: p.websiteUri || null,
-            phone: p.nationalPhoneNumber || '',
-            rating: p.rating || null,
-            reviewCount: p.userRatingCount || 0,
-            reviews: (p.reviews || []).map(r => r.text?.text || '').filter(Boolean)
+            id: p.fsq_id,
+            name: p.name || 'Unknown',
+            address: p.location?.formatted_address || '',
+            website: p.website || null,
+            phone: p.tel || '',
+            // Foursquare rates 0-10; normalize to 0-5 to match scoring logic
+            rating: p.rating ? p.rating / 2 : null,
+            reviewCount: p.stats?.total_ratings || 0,
+            reviews: [] // fetched per-business in /api/analyze
           });
         }
       }
@@ -97,13 +91,32 @@ app.post('/api/search', async (req, res) => {
     res.json({ businesses: allBusinesses });
   } catch (err) {
     console.error('Search error:', err.response?.data || err.message);
-    res.status(500).json({ error: err.response?.data?.error?.message || err.message });
+    res.status(500).json({ error: err.response?.data?.message || err.message });
   }
 });
 
-// Analyze one business: website quality check + conversion score
+// Analyze one business: fetch tips, website quality check + conversion score
 app.post('/api/analyze', async (req, res) => {
   const { business } = req.body;
+
+  // Fetch Foursquare tips (reviews) for this place
+  let reviews = business.reviews || [];
+  if (business.id && !reviews.length && process.env.FOURSQUARE_API_KEY) {
+    try {
+      const tipsRes = await axios.get(
+        `https://api.foursquare.com/v3/places/${business.id}/tips`,
+        {
+          params: { limit: 10, fields: 'text' },
+          headers: { 'Authorization': process.env.FOURSQUARE_API_KEY, 'Accept': 'application/json' }
+        }
+      );
+      reviews = (tipsRes.data.results || []).map(t => t.text || '').filter(Boolean);
+    } catch {
+      reviews = [];
+    }
+  }
+
+  const businessWithReviews = { ...business, reviews };
 
   const effectiveWebsite = business.website && !isSocialOrDirectory(business.website)
     ? business.website
@@ -159,8 +172,8 @@ Reply with ONLY raw JSON, no markdown or backticks:
     }
   }
 
-  // Scan reviews for mentions of needing a website or online presence
-  const allReviewText = business.reviews.join(' ').toLowerCase();
+  // Scan reviews/tips for mentions of needing a website or online presence
+  const allReviewText = reviews.join(' ').toLowerCase();
   const reviewMentionsWebsite = [
     'website', 'online booking', 'book online', "can't find", 'hard to find',
     'no website', 'social media only', 'instagram only', 'not online'
@@ -188,7 +201,7 @@ Reply with ONLY raw JSON, no markdown or backticks:
   conversionScore = Math.min(95, conversionScore);
 
   res.json({
-    ...business,
+    ...businessWithReviews,
     hasRealWebsite: !!effectiveWebsite,
     hasSocialOnly,
     hasWebsite: !!business.website,
