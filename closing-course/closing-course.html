@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Closing Academy</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #07070f;
+  --card: #0e0e1a;
+  --card-hover: #141428;
+  --border: #1e1e35;
+  --accent: #818cf8;
+  --accent-glow: rgba(129,140,248,0.25);
+  --green: #34d399;
+  --yellow: #fbbf24;
+  --red: #f87171;
+  --purple: #a78bfa;
+  --text: #f8fafc;
+  --muted: #64748b;
+  --dim: #94a3b8;
+  --r: 14px;
+  --rs: 10px;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: var(--bg); } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.view { display: none; max-width: 480px; margin: 0 auto; padding: 16px 16px 80px; }
+.view.active { display: block; }
+
+/* TOP BAR */
+.top-bar { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 12px; max-width: 480px; margin: 0 auto; position: sticky; top: 0; z-index: 10; background: var(--bg); border-bottom: 1px solid var(--border); }
+.xp-badge { display: flex; align-items: center; gap: 5px; background: var(--card); border: 1px solid var(--border); border-radius: 99px; padding: 5px 12px; font-weight: 700; font-size: 14px; }
+.xp-badge span { color: var(--yellow); transition: transform 0.2s; }
+.level-pill { font-size: 11px; color: var(--accent); background: rgba(129,140,248,0.1); border: 1px solid rgba(129,140,248,0.3); border-radius: 99px; padding: 4px 10px; font-weight: 700; letter-spacing: 0.05em; }
+.streak-badge { display: flex; align-items: center; gap: 4px; background: var(--card); border: 1px solid var(--border); border-radius: 99px; padding: 5px 12px; font-weight: 700; font-size: 14px; }
+
+/* HOME */
+.progress-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin: 16px 0 6px; }
+.track { height: 5px; background: var(--card); border-radius: 99px; overflow: hidden; }
+.fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--purple)); border-radius: 99px; transition: width 0.6s ease; }
+
+.section-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.09em; margin: 18px 0 10px; }
+.module-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mod-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 15px; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
+.mod-card:not(.locked):hover { border-color: var(--accent); background: var(--card-hover); transform: translateY(-2px); box-shadow: 0 8px 20px var(--accent-glow); }
+.mod-card.locked { opacity: 0.4; cursor: not-allowed; }
+.mod-card.done { border-color: rgba(52,211,153,0.35); }
+.mod-card.done::after { content: '✓'; position: absolute; top: 10px; right: 10px; font-size: 11px; color: var(--green); font-weight: 800; background: rgba(52,211,153,0.12); width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.mod-card.current { border-color: var(--accent); }
+.mod-emoji { font-size: 26px; margin-bottom: 8px; display: block; }
+.mod-name { font-size: 12px; font-weight: 800; line-height: 1.3; margin-bottom: 3px; }
+.mod-sub { font-size: 10px; color: var(--muted); }
+.mod-xp { margin-top: 8px; font-size: 10px; color: var(--yellow); font-weight: 700; }
+
+.daily-bonus { background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.3); border-radius: var(--rs); padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; animation: slideIn 0.3s ease; }
+.daily-bonus-xp { color: var(--yellow); font-weight: 800; }
+
+/* BUTTONS */
+.btn { display: block; width: 100%; padding: 14px; border: none; border-radius: var(--rs); font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.18s; text-align: center; }
+.btn-primary { background: linear-gradient(135deg, var(--accent), var(--purple)); color: white; box-shadow: 0 4px 16px var(--accent-glow); }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px var(--accent-glow); }
+.btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); margin-top: 8px; }
+.btn-secondary:hover { background: var(--card-hover); }
+.btn-green { background: var(--green); color: #052e16; }
+.btn-yellow { background: var(--yellow); color: #451a03; }
+.btn-red { background: rgba(248,113,113,0.15); color: var(--red); border: 1px solid rgba(248,113,113,0.3); }
+
+/* LESSON / DRILL SHARED */
+.view-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+.back-btn { background: var(--card); border: 1px solid var(--border); color: var(--text); width: 34px; height: 34px; border-radius: 8px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.back-btn:hover { background: var(--card-hover); }
+.view-title { font-size: 18px; font-weight: 800; }
+.view-sub { font-size: 12px; color: var(--muted); }
+
+.dots-row { display: flex; gap: 5px; margin-bottom: 18px; }
+.dot { flex: 1; height: 3px; background: var(--border); border-radius: 99px; transition: background 0.3s; }
+.dot.done { background: var(--accent); }
+
+/* LESSON CARD */
+.lesson-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 22px; margin-bottom: 14px; animation: slideIn 0.3s ease; }
+@keyframes slideIn { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
+.card-type { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent); margin-bottom: 8px; }
+.card-title { font-size: 16px; font-weight: 800; margin-bottom: 12px; line-height: 1.3; }
+.card-body { font-size: 13px; line-height: 1.75; color: var(--dim); }
+.card-body strong { color: var(--text); }
+.script-box { margin-top: 14px; background: rgba(129,140,248,0.07); border: 1px solid rgba(129,140,248,0.22); border-radius: 8px; padding: 12px 14px; font-size: 13px; line-height: 1.6; font-style: italic; }
+.script-box::before { content: 'SAY THIS:'; display: block; font-style: normal; font-size: 9px; font-weight: 800; color: var(--accent); letter-spacing: 0.12em; margin-bottom: 7px; }
+.rule-box { margin-top: 12px; background: rgba(251,191,36,0.07); border-left: 3px solid var(--yellow); padding: 9px 12px; border-radius: 0 7px 7px 0; font-size: 12px; color: var(--yellow); font-weight: 600; }
+.lesson-nav { display: flex; gap: 8px; margin-top: 6px; }
+.lesson-nav .btn { flex: 1; }
+
+/* DRILL CARD */
+.drill-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 22px; text-align: center; min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; animation: slideIn 0.3s ease; }
+.drill-count { font-size: 11px; color: var(--muted); font-weight: 600; margin-bottom: 12px; }
+.drill-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 10px; }
+.drill-q { font-size: 16px; font-weight: 700; line-height: 1.45; margin-bottom: 18px; }
+.drill-ans { display: none; width: 100%; background: rgba(52,211,153,0.07); border: 1px solid rgba(52,211,153,0.25); border-radius: 8px; padding: 14px; font-size: 13px; line-height: 1.6; color: var(--green); text-align: left; margin-bottom: 14px; animation: slideIn 0.25s ease; }
+.drill-ans.show { display: block; }
+.rate-row { display: none; grid-template-columns: 1fr 1fr 1fr; gap: 7px; width: 100%; }
+.rate-row.show { display: grid; }
+.rate-btn { border: none; border-radius: 8px; padding: 11px 6px; font-size: 11px; font-weight: 800; cursor: pointer; transition: all 0.18s; line-height: 1.4; }
+.rate-btn:hover { transform: translateY(-2px); }
+.r-nailed { background: var(--green); color: #052e16; }
+.r-almost { background: var(--yellow); color: #451a03; }
+.r-missed { background: rgba(248,113,113,0.15); color: var(--red); border: 1px solid rgba(248,113,113,0.3); }
+
+/* TIMER */
+.timer-circle { width: 90px; height: 90px; border-radius: 50%; border: 3px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 900; margin: 16px auto; box-shadow: 0 0 16px var(--accent-glow); transition: border-color 0.3s, box-shadow 0.3s; }
+
+/* COMPLETE */
+.complete-wrap { text-align: center; padding: 36px 0 20px; }
+.complete-big { font-size: 60px; display: block; animation: pop 0.5s ease; margin-bottom: 14px; }
+@keyframes pop { 0% { transform: scale(0); } 65% { transform: scale(1.2); } 100% { transform: scale(1); } }
+.complete-title { font-size: 26px; font-weight: 900; margin-bottom: 6px; }
+.complete-sub { font-size: 13px; color: var(--muted); }
+.xp-box { background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.28); border-radius: var(--r); padding: 20px; text-align: center; margin: 20px 0; }
+.xp-big { font-size: 38px; font-weight: 900; color: var(--yellow); }
+.xp-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+/* XP POPUP */
+.xp-pop { position: fixed; top: 72px; left: 50%; transform: translateX(-50%); background: var(--yellow); color: #451a03; padding: 7px 18px; border-radius: 99px; font-weight: 900; font-size: 15px; pointer-events: none; z-index: 999; animation: xpFloat 1.4s ease forwards; }
+@keyframes xpFloat { 0% { opacity: 1; transform: translateX(-50%) translateY(0); } 100% { opacity: 0; transform: translateX(-50%) translateY(-55px); } }
+
+/* LEVEL UP */
+.lvl-banner { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); background: linear-gradient(135deg, var(--accent), var(--purple)); color: white; padding: 22px 36px; border-radius: var(--r); text-align: center; z-index: 1000; animation: lvlAnim 2.8s ease forwards; box-shadow: 0 16px 50px var(--accent-glow); pointer-events: none; }
+.lvl-banner h2 { font-size: 22px; font-weight: 900; }
+.lvl-banner p { font-size: 13px; opacity: 0.8; margin-top: 4px; }
+@keyframes lvlAnim { 0% { opacity: 0; transform: translate(-50%,-50%) scale(0.5); } 15% { opacity: 1; transform: translate(-50%,-50%) scale(1.04); } 75% { opacity: 1; transform: translate(-50%,-50%) scale(1); } 100% { opacity: 0; } }
+
+/* CONFETTI */
+.confetti { position: fixed; width: 7px; height: 7px; border-radius: 2px; animation: fall linear forwards; pointer-events: none; z-index: 998; }
+@keyframes fall { 0% { transform: translateY(-10px) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
+
+/* QUICK REF TABLE */
+.ref-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.ref-table th { text-align: left; padding: 9px 10px; background: var(--card); color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.09em; border-bottom: 1px solid var(--border); }
+.ref-table td { padding: 11px 10px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.5; }
+.ref-table tr:last-child td { border-bottom: none; }
+.td-sit { color: var(--muted); font-style: italic; width: 38%; }
+.td-say { color: var(--text); }
+
+/* ROLEPLAY */
+.rp-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 22px; text-align: center; animation: slideIn 0.3s ease; }
+.rp-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 10px; }
+.rp-text { font-size: 16px; font-weight: 700; line-height: 1.45; margin-bottom: 20px; }
+.rp-ans-box { background: rgba(129,140,248,0.07); border: 1px solid rgba(129,140,248,0.22); border-radius: 8px; padding: 14px; font-size: 13px; line-height: 1.6; text-align: left; margin-bottom: 18px; font-style: italic; }
+.client-bubble { background: rgba(52,211,153,0.07); border: 1px solid rgba(52,211,153,0.22); border-radius: 8px; padding: 10px 12px; font-size: 13px; text-align: left; color: var(--green); margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="xp-badge">⚡ <span id="xpNum">0</span> XP</div>
+  <div class="level-pill" id="lvlPill">ROOKIE</div>
+  <div class="streak-badge">🔥 <span id="streakNum">0</span></div>
+</div>
+
+<!-- HOME -->
+<div class="view active" id="vHome">
+  <div id="bonusBar" class="daily-bonus" style="display:none">
+    <span>🎁 Daily check-in bonus!</span>
+    <span class="daily-bonus-xp">+25 XP</span>
+  </div>
+  <div class="progress-row"><span>Overall Progress</span><span id="progText">0 / 8</span></div>
+  <div class="track"><div class="fill" id="progFill" style="width:0%"></div></div>
+  <div class="section-label">Your Modules</div>
+  <div class="module-grid" id="moduleGrid"></div>
+  <div style="margin-top:14px">
+    <button class="btn btn-secondary" onclick="show('vRef')">📋 Cheat Sheet</button>
+    <button class="btn btn-secondary" onclick="startRoleplay()">🎭 Full Call Roleplay</button>
+  </div>
+</div>
+
+<!-- LESSON -->
+<div class="view" id="vLesson">
+  <div class="view-header">
+    <button class="back-btn" onclick="show('vHome');renderHome()">←</button>
+    <div><div class="view-title" id="lessonTitle"></div><div class="view-sub" id="lessonSub"></div></div>
+  </div>
+  <div class="dots-row" id="lessonDots"></div>
+  <div id="lessonBody"></div>
+  <div class="lesson-nav">
+    <button class="btn btn-secondary" id="btnPrev" onclick="prevLesson()" style="display:none">← Back</button>
+    <button class="btn btn-primary" id="btnNext" onclick="nextLesson()">Continue →</button>
+  </div>
+</div>
+
+<!-- DRILL -->
+<div class="view" id="vDrill">
+  <div class="view-header">
+    <button class="back-btn" onclick="show('vHome');renderHome()">←</button>
+    <div><div class="view-title" id="drillTitle"></div><div class="view-sub" id="drillSub"></div></div>
+  </div>
+  <div class="dots-row" id="drillDots"></div>
+  <div id="drillBody"></div>
+</div>
+
+<!-- COMPLETE -->
+<div class="view" id="vComplete">
+  <div class="complete-wrap">
+    <span class="complete-big" id="cEmoji">🎉</span>
+    <div class="complete-title" id="cTitle">Done!</div>
+    <div class="complete-sub" id="cSub"></div>
+  </div>
+  <div class="xp-box">
+    <div class="xp-big" id="cXP">+0 XP</div>
+    <div class="xp-label">earned this module</div>
+  </div>
+  <div id="cNext" style="margin-bottom:14px"></div>
+  <button class="btn btn-primary" onclick="show('vHome');renderHome()">Back to Academy</button>
+</div>
+
+<!-- QUICK REF -->
+<div class="view" id="vRef">
+  <div class="view-header">
+    <button class="back-btn" onclick="show('vHome')">←</button>
+    <div><div class="view-title">Cheat Sheet</div><div class="view-sub">Every key script in one place</div></div>
+  </div>
+  <table class="ref-table">
+    <thead><tr><th>Situation</th><th>You Say</th></tr></thead>
+    <tbody>
+      <tr><td class="td-sit">Price asked before call</td><td class="td-say">"Depends on what you need — let's go over it on the call."</td></tr>
+      <tr><td class="td-sit">"Just DM me the info"</td><td class="td-say">"I'll keep it 15 min. Want to make sure it fits your shop. When works?"</td></tr>
+      <tr><td class="td-sit">Opening the call</td><td class="td-say">"Before I show you anything, can I ask a few quick questions?"</td></tr>
+      <tr><td class="td-sit">Reviews Q</td><td class="td-say">"How many Google reviews do you have? Your top competitor?"</td></tr>
+      <tr><td class="td-sit">Confirm the pain</td><td class="td-say">"So if someone finds you when you're busy or closed, they just disappear. Does that sound right?"</td></tr>
+      <tr><td class="td-sit">Transition to demo</td><td class="td-say">"Okay — let me show you what I built."</td></tr>
+      <tr><td class="td-sit">After showing demo</td><td class="td-say">"What do you think?" → SHUT UP</td></tr>
+      <tr><td class="td-sit">Stating price</td><td class="td-say">"[Price]. I handle everything." → 5 sec silence</td></tr>
+      <tr><td class="td-sit">"Let me think about it"</td><td class="td-say">"What part are you unsure about?"</td></tr>
+      <tr><td class="td-sit">"What if it doesn't work?"</td><td class="td-say">"50% now, I build it, you see before launch. Don't like it — full refund."</td></tr>
+      <tr><td class="td-sit">"I have a website"</td><td class="td-say">"Does it have booking? When was it updated?"</td></tr>
+      <tr><td class="td-sit">"No budget"</td><td class="td-say">"That's why I do 50/50 — [half] now, rest after you see it."</td></tr>
+      <tr><td class="td-sit">"Need to talk to partner"</td><td class="td-say">"Anything I can clear up? Want to do a quick call with both of you?"</td></tr>
+      <tr><td class="td-sit">"You're young"</td><td class="td-say">"I built this for your shop. Look at it. Either it's good or it's not."</td></tr>
+      <tr><td class="td-sit">They say yes</td><td class="td-say">"I'll send the Stripe link in 5 min. Sound good?"</td></tr>
+      <tr><td class="td-sit">Still undecided</td><td class="td-say">"Let's put a time on the calendar now — Thursday or Friday?"</td></tr>
+      <tr><td class="td-sit">Referral ask</td><td class="td-say">"Know any other barbershop or salon owners in the city who might want this?"</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ROLEPLAY -->
+<div class="view" id="vRoleplay">
+  <div class="view-header">
+    <button class="back-btn" onclick="show('vHome')">←</button>
+    <div><div class="view-title">Full Call Roleplay</div><div class="view-sub" id="rpSub">Start to close</div></div>
+  </div>
+  <div id="rpBody"></div>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────
+
+const MODS = [
+  { id:0, emoji:'🧠', title:'Mindset Reset', sub:'Do this before every call', xp:75,
+    lessons:[
+      { type:'concept', title:"You're a Doctor, Not a Salesman",
+        body:"A doctor doesn't try to convince you to be sick. They ask where it hurts, diagnose the problem, then prescribe the fix.\n\nYou're not there to convince anyone of anything. You're there to find out if they have a problem you can solve. If yes — show the fix. If no — move on.",
+        rule:"You're not desperate. You're a professional with a solution that works." },
+      { type:'concept', title:"Objections = Buying Signals",
+        body:"When someone has zero interest, they ghost you. They don't object.\n\nIf a barbershop owner says 'what if it doesn't work?' — they're imagining it working. That question means they're 80% in. Your job is just to answer the concern and close.",
+        rule:"Objections aren't attacks. They're questions. Answer them." },
+      { type:'action', title:"Your Pre-Call Mantra",
+        body:"Say this out loud before every call. Not in your head. Out loud.",
+        script:'"I\'m not here to sell. I\'m here to find out if they have a problem I can fix. If they do, I\'ll show them the fix. Either way, I\'m not losing anything."' }
+    ],
+    drills:[
+      { type:'script', prompt:"Say your pre-call mantra out loud", xp:25,
+        script:'"I\'m not here to sell. I\'m here to find out if they have a problem I can fix. If they do, I\'ll show them the fix. Either way, I\'m not losing anything."', timer:15 }
+    ]
+  },
+  { id:1, emoji:'📋', title:'Before the Call', sub:'3 rules before you even join', xp:100,
+    lessons:[
+      { type:'concept', title:"Rule 1 — Never Mention Price Before the Call",
+        body:"If they ask price before seeing the demo, they judge you on cost alone. They hear $400 and say no — before they've seen what $400 gets them.\n\nShow value first. Price last. Always.",
+        script:'"Pricing depends on what you need — let\'s go over it on the call and figure out what makes sense for your shop."' },
+      { type:'concept', title:"Rule 2 — The Reminder System",
+        body:"People forget they booked. Then they get embarrassed and ghost you. Fix it:\n\n• Confirm immediately when they agree\n• Every 3 days: quick reminder\n• 1 day before, 1 hour before, 5 min before",
+        script:'"Hey [name], locked in! Our call is [day] at [time]. I\'m going to have a demo built for [shop name] ready to show you. See you then."',
+        rule:"Mention you built something for them. If they no-show, they feel guilty." },
+      { type:'concept', title:"Rule 3 — Never Let Them Skip the Call",
+        body:"'Just DM me info' = 10x harder to close. The call is where you build context, show the demo, and close. Never skip it.",
+        script:'"I\'ll keep it under 15 min. Just want to make sure what I show you actually fits your specific shop. When\'s a good time?"' }
+    ],
+    drills:[
+      { type:'card', prompt:'They ask: "How much does it cost?" (before the call)',
+        ans:'"Pricing depends on what you need — let\'s go over it on the call and figure out what makes sense for your shop."', xp:50 },
+      { type:'card', prompt:'They say: "Can you just DM me the info?"',
+        ans:'"I\'ll keep it under 15 min. Just want to make sure what I show you fits your specific shop. When works?"', xp:50 },
+      { type:'card', prompt:'They say: "I\'m busy this week."',
+        ans:'"No problem — what about next week? Even 15 minutes would be enough."', xp:50 }
+    ]
+  },
+  { id:2, emoji:'🎯', title:'Opening the Call', sub:'Ask questions, diagnose the pain', xp:125,
+    lessons:[
+      { type:'concept', title:"Talk 20%, Listen 80%",
+        body:"Beginners open by pitching. They show the site, explain features, ask 'want to buy?' — and get rejected.\n\nWhen THEY say they have a problem, THEY convince THEMSELVES to buy. You don't push. You just ask the right questions.",
+        rule:"Your job in the first 3 min: get them to say their own problem out loud." },
+      { type:'concept', title:"Your Opening Line",
+        body:"Don't pitch first. Ask permission to ask questions. This signals you're a professional, not a desperate seller.",
+        script:'"Hey [name], thanks for getting on — I\'ll keep this quick. Before I show you anything, I just want to understand your situation. Mind if I ask a few quick questions?"' },
+      { type:'concept', title:"The 5 Diagnostic Questions",
+        body:"Q1 — Reviews: \"How many Google reviews do you have? Your top competitor?\"\n\nQ2 — Website: \"Do you have a site? Can customers book directly from it?\"\n\nQ3 — Booking: \"How do most people book — walk-in, phone?\"\n\nQ4 — Missed money: \"Ever had someone reach out and they just went somewhere else?\"\n\nQ5 — Confirm pain: \"So if someone finds you when you\'re busy or closed, they basically can\'t book — they just disappear. Does that sound right?\"",
+        rule:'After Q5 they say "yeah basically." That\'s your opening.' },
+      { type:'action', title:"The Transition Line",
+        body:"After they confirm the problem — this is all you say. No explanation. No preamble.",
+        script:'"Okay — let me show you what I built."' }
+    ],
+    drills:[
+      { type:'card', prompt:'What\'s your opening line when you get on the call?',
+        ans:'"Hey [name], thanks for getting on. Before I show you anything, can I ask a few quick questions?"', xp:50 },
+      { type:'card', prompt:'Q1 — the reviews question (exact wording)',
+        ans:'"How many Google reviews does your shop have right now? And your top competitor — do you know how many they have?"', xp:50 },
+      { type:'card', prompt:'Q5 — confirm the pain (exact wording)',
+        ans:'"So if someone finds you when you\'re busy or closed, there\'s basically no way to book — they just disappear. Does that sound right?"', xp:50 },
+      { type:'card', prompt:'After they confirm the problem — what do you say?',
+        ans:'"Okay — let me show you what I built." Short. Clean. Then show the demo.', xp:50 }
+    ]
+  },
+  { id:3, emoji:'💻', title:'The Demo', sub:'Show the site the right way', xp:100,
+    lessons:[
+      { type:'concept', title:"Customer Experience, Not Feature List",
+        body:"Wrong: 'It has a booking system, mobile optimization, fast loading...'\n\nRight: Walk them through what their CUSTOMER experiences when they find the site.",
+        script:'"Imagine you\'re a customer who just searched \'barbershop in [neighborhood]\' — this is the page they land on."' },
+      { type:'concept', title:"The 4 Things to Walk Through",
+        body:"1. The look — 'Clean, professional, loads fast. First impression matters.'\n\n2. Booking button — 'They hit this, pick a time, done. No phone call. You get a notification, they get a confirmation.'\n\n3. Reviews section — 'Once you hit 50+ Google reviews, I embed them here. Social proof before they even call.'\n\n4. Mobile — '80% of searches are on phones. Here\'s how it looks.'" },
+      { type:'action', title:"After the Demo — One Line, Then Silence",
+        body:"Walk through all 4 things. Then stop. Say only this. Then completely shut up and let them react.",
+        script:'"What do you think?"' }
+    ],
+    drills:[
+      { type:'card', prompt:'After the full demo — what are the only words you say?',
+        ans:'"What do you think?" — then SHUT UP. Let them talk. Their reaction tells you where you are.', xp:50 },
+      { type:'card', prompt:'How do you frame showing the site? (the exact setup line)',
+        ans:'"Imagine you\'re a customer who just searched \'barbershop in [neighborhood]\' — this is the page they land on."', xp:50 },
+      { type:'card', prompt:'Name the 4 things to walk through in the demo.',
+        ans:'1. The look (clean/professional) 2. Booking button (pick time, you get notified) 3. Reviews section (social proof) 4. Mobile view (80% on phones)', xp:50 }
+    ]
+  },
+  { id:4, emoji:'💰', title:'Stating the Price', sub:'The scariest moment — solved', xp:125,
+    lessons:[
+      { type:'concept', title:"Only Say Price When They're Engaged",
+        body:"Signs they're engaged: asking questions about the site, saying 'oh that's cool', leaning in, asking how booking works.\n\nIf they seem flat after the demo — ask more questions before going to price. Don't name a number into silence you created." },
+      { type:'action', title:"The Exact Price Line",
+        body:"Say it once. Short. Confident. No hedging. Then stop talking completely.",
+        script:'"So here\'s how this works. The full site — booking system, design, everything — is [your price]. I handle everything. You don\'t touch any of it."',
+        rule:"Then SHUT UP. First person to talk after the price loses. Let it be them." },
+      { type:'concept', title:"The 5-Second Silence Rule",
+        body:"The silence feels uncomfortable for YOU. It's neutral for THEM — they're just thinking.\n\nMost beginners fill the silence with 'is that okay?' or 'I know it seems like a lot but...' — and kill the close.\n\nIf they're still quiet after 5 seconds, add one line:",
+        script:'"And if you\'re not happy with what I build, full refund — no questions asked."' }
+    ],
+    drills:[
+      { type:'script', prompt:"Say the price line — then stay SILENT for 5 seconds", xp:75,
+        script:'"So here\'s how this works. The full site — booking system, design, everything — is $[YOUR PRICE]. I handle everything. You don\'t touch any of it."\n\n[COUNT TO 5. Say nothing else.]', timer:20 },
+      { type:'card', prompt:'After you say the price and they go quiet — what do you do?',
+        ans:'Wait 5 seconds. Say nothing. If still quiet: "And if you\'re not happy with what I build, full refund — no questions asked." Then shut up again.', xp:50 }
+    ]
+  },
+  { id:5, emoji:'🥊', title:'Handling Objections', sub:'All 6 you\'ll face — answered', xp:150,
+    lessons:[
+      { type:'concept', title:"The Rule",
+        body:"Objections are questions in disguise.\n\n'Let me think about it' = something's holding me back.\n'What if it doesn't work?' = I'm imagining it working.\n'You're young' = I need more confidence to pay.\n\nFind the real question. Answer it clearly. Close.",
+        rule:"Never accept 'let me think about it.' Always push to find the real concern." },
+      { type:'concept', title:'"Let me think about it."',
+        body:"Most common. Don't accept it. Push to find the real objection.",
+        script:'"Totally fair. What part are you unsure about — is it the price, or is it more about whether this will actually bring in more customers?"' },
+      { type:'concept', title:'"What if it doesn\'t work?"',
+        body:"Use the proof of concept. Removes all their risk.",
+        script:'"That\'s exactly why I do the proof of concept. You pay 50% now. I build the full site. You see it before it goes live. If you don\'t like it — full refund. No questions asked."' },
+      { type:'concept', title:'"I already have a website."',
+        body:"Find out if it actually solves the problem.",
+        script:'"Does it have booking where customers can schedule directly? And when was it last updated?" [If old or no booking:] "A static site doesn\'t bring you customers. This one does."' },
+      { type:'concept', title:'"No budget right now."',
+        body:"Lower the upfront commitment.",
+        script:'"That\'s why I do 50/50 — you pay [half price] now, I build it, you see the full thing before committing to the rest. Keeps the risk low."' },
+      { type:'concept', title:'"Need to talk to my partner."',
+        body:"Get the real concern, offer to include them.",
+        script:'"Of course. Anything I can clear up before you talk to them? Or — would it help to do a quick 10-min call with both of you?"' },
+      { type:'action', title:'"You\'re young." / Trust Issues',
+        body:"Don't apologize for your age. Redirect to the work itself.",
+        script:'"Fair — I\'m 15. But I built this demo for your shop specifically. You can see it right now. Either it looks good or it doesn\'t — that\'s not about my age, that\'s about the work. One new customer and it paid for itself."' }
+    ],
+    drills:[
+      { type:'card', prompt:'"Let me think about it."',
+        ans:'"Totally fair. What part are you unsure about — is it the price, or more about whether this will actually bring in customers?"', xp:50 },
+      { type:'card', prompt:'"What if it doesn\'t work after a month?"',
+        ans:'"50% now. I build the full site. You see it before launch. Don\'t like it — full refund. No questions asked."', xp:50 },
+      { type:'card', prompt:'"I already have a website."',
+        ans:'"Does it have booking where customers schedule directly? When was it last updated?" [If no/old:] "A static site doesn\'t bring customers. This one does."', xp:50 },
+      { type:'card', prompt:'"I don\'t have the budget right now."',
+        ans:'"That\'s why I do 50/50 — [half] now, I build it, you see the full site before committing to the rest."', xp:50 },
+      { type:'card', prompt:'"I need to talk to my partner first."',
+        ans:'"Anything I can clear up before you talk to them? Would it help to do a quick 10-min call with both of you?"', xp:50 },
+      { type:'card', prompt:'They imply they don\'t trust you because you\'re young.',
+        ans:'"Fair — I\'m 15. But I built this for your shop specifically. Look at it. Either it\'s good or it\'s not. One new customer and it paid for itself."', xp:75 }
+    ]
+  },
+  { id:6, emoji:'🤝', title:'Closing the Deal', sub:'Lock it in before you hang up', xp:125,
+    lessons:[
+      { type:'concept', title:"Never End a Call Without a Next Step",
+        body:"'I'll follow up' = they ghost you. Every time.\n\nIf they said yes → get payment info before hanging up.\nIf still deciding → book a next call before hanging up.\n\nIf it's not on the calendar when you hang up, it won't happen.",
+        rule:"The call is not over until something is booked or money is moving." },
+      { type:'action', title:"If They Said Yes — The Close",
+        body:"Don't celebrate. Move straight to the next step.",
+        script:'"Perfect. I\'ll send you a Stripe link — should be in your inbox in 5 minutes. Once that\'s in, I\'ll start building and have something to show you by [3 days from now]. Sound good?"' },
+      { type:'action', title:"If They Need More Time",
+        body:"Don't let them leave without a next call locked in.",
+        script:'"No problem. Let\'s put a time on the calendar now so you don\'t have to chase me down. What works — Thursday or Friday this week?"' },
+      { type:'concept', title:"The $1 Stripe Hold",
+        body:"For free trials or 'try it first' situations — still get commitment.\n\nCreate a $1/year recurring link in Stripe. Tell them it's a hold you'll refund. Saves the card on file so charging later is frictionless.",
+        script:'"Just need a $1 hold on your card — I\'ll refund it immediately. Saves your info so when you\'re ready to launch, we don\'t have to go back and forth."' }
+    ],
+    drills:[
+      { type:'card', prompt:'They said yes. What do you say right now?',
+        ans:'"Perfect. I\'ll send a Stripe link — in your inbox in 5 minutes. Once that\'s in, I\'ll start building and have something to show you by [date]."', xp:50 },
+      { type:'card', prompt:'They\'re undecided at the end of the call. What do you do?',
+        ans:'Book the next call NOW: "Let\'s put a time on the calendar. What works — Thursday or Friday?" Don\'t leave without a next step.', xp:50 },
+      { type:'script', prompt:"Practice your close out loud", xp:50,
+        script:'"Awesome. I\'ll send the Stripe link in the next 5 minutes. Once you pay the deposit, I\'ll get started and have something to show you by [date]. Sound good?"', timer:15 }
+    ]
+  },
+  { id:7, emoji:'📈', title:'After the Call', sub:'Retention, upsells, referrals', xp:75,
+    lessons:[
+      { type:'concept', title:"Do a Hell of a Job",
+        body:"Your reputation is everything right now. No testimonials yet. Every client is your first case study.\n\nReferrals, upsells, and retention all come from one thing: doing work so good they can't imagine not keeping you.",
+        rule:"Everything in this module only works if the actual work is great." },
+      { type:'concept', title:"Bi-Weekly Check-In Calls",
+        body:"Most people deliver the work and disappear. That's 30% monthly churn — clients stay 3 months on average.\n\nCheck in every 2 weeks. Catch problems before they do. This drops churn to ~5%. Average client stays 20 months.",
+        script:'"Hey [name], just checking in — how\'s the booking system working? Anything you want adjusted?"' },
+      { type:'concept', title:"How to Upsell",
+        body:"You already have the relationship. Upselling costs nothing extra. After delivery, ask about the next problem they have.",
+        script:'"Now that the site\'s working — do you want me to optimize your Google Business Profile so you show up higher in local search? That\'s the next thing that would actually move the needle."' },
+      { type:'action', title:"Referrals — The Right Way",
+        body:"Wrong: 'Do you know anyone who could use this?' Their brain goes blank.\n\nRight: Give them a specific category so their brain has something to work with.",
+        script:'"Do you know any other barbershop owners, salon owners, or solo service people in the city who might want this? If they sign up, I\'ll give you 20% of what they pay."' }
+    ],
+    drills:[
+      { type:'card', prompt:'How do you ask for referrals? (give the specific script, not the wrong version)',
+        ans:'"Do you know any other barbershop owners, salon owners, or solo service people in the city who might want this? If they sign up, 20% is yours."', xp:50 },
+      { type:'card', prompt:'What\'s your upsell line after delivering the website?',
+        ans:'"Now that the site\'s working — do you want me to optimize your Google Business Profile so you show up higher in local search?"', xp:50 }
+    ]
+  }
+];
+
+const LEVELS = [
+  {n:'ROOKIE',min:0},{n:'CLOSER',min:100},{n:'PRO CLOSER',min:350},
+  {n:'ELITE',min:700},{n:'LEGEND',min:1000}
+];
+
+const ROLEPLAY = [
+  {who:'you', text:'Start the call. Say your opening line.'},
+  {who:'ans', text:'"Hey [name], thanks for getting on. Before I show you anything, can I ask a few quick questions?"'},
+  {who:'client', text:'Yeah sure, go ahead.'},
+  {who:'you', text:'Ask Q1 — the reviews question.'},
+  {who:'ans', text:'"How many Google reviews does your shop have right now? And your top competitor — do you know how many they have?"'},
+  {who:'client', text:'We have like 12. I think the place down the street has around 80.'},
+  {who:'you', text:'Use their answer to make them see the problem themselves.'},
+  {who:'ans', text:'"So when someone searches \'barbershop near me\' and sees 80 reviews vs 12 — who do you think they\'re calling?" [Wait for their answer.]'},
+  {who:'client', text:'...probably the other place.'},
+  {who:'you', text:'Ask Q5 — confirm the pain.'},
+  {who:'ans', text:'"So if someone finds you when you\'re busy or closed, there\'s basically no way to book — they just disappear. Does that sound right?"'},
+  {who:'client', text:'Yeah basically. We lose people like that all the time.'},
+  {who:'you', text:'Transition to the demo.'},
+  {who:'ans', text:'"Okay — let me show you what I built." [Show the 4 things. Then: "What do you think?" — SHUT UP.]'},
+  {who:'client', text:'This actually looks really good. How much does it cost?'},
+  {who:'you', text:'State the price. Then stop talking.'},
+  {who:'ans', text:'"The full site — booking system, design, everything — is $[X]. I handle everything." [Count to 5. Say nothing.]'},
+  {who:'client', text:'Hmm... let me think about it.'},
+  {who:'you', text:'Handle the objection. Push to find the real concern.'},
+  {who:'ans', text:'"Totally fair. What part are you unsure about — is it the price, or more about whether this will actually bring in customers?"'},
+  {who:'client', text:'Honestly I just want to make sure it works before I pay for it.'},
+  {who:'you', text:'Use the proof of concept offer.'},
+  {who:'ans', text:'"That\'s exactly why I do this: 50% now, I build the full site, you see it before launch. Don\'t like it — full refund. No questions asked."'},
+  {who:'client', text:'Okay yeah, that sounds fair. Let\'s do it.'},
+  {who:'you', text:'Close the deal!'},
+  {who:'ans', text:'"Perfect. I\'ll send you a Stripe link — in your inbox in 5 min. Once that\'s in, I\'ll start building and have something to show you by [date]. Sound good?"'}
+];
+
+// ─── STATE ──────────────────────────────────────────────────
+let S = { xp:0, streak:0, lastVisit:null, done:[], sessXP:0 };
+let curMod = null, curLesson = 0, curDrill = 0;
+let timerInt = null;
+
+function loadS() {
+  const s = localStorage.getItem('ca_v1');
+  if (s) S = {...S, ...JSON.parse(s)};
+}
+function saveS() { localStorage.setItem('ca_v1', JSON.stringify(S)); }
+
+// ─── INIT ────────────────────────────────────────────────────
+function init() {
+  loadS();
+  const today = new Date().toDateString();
+  if (S.lastVisit !== today) {
+    const last = S.lastVisit ? new Date(S.lastVisit) : null;
+    const diff = last ? Math.floor((new Date() - last) / 86400000) : 0;
+    S.streak = diff === 1 ? S.streak + 1 : 1;
+    S.lastVisit = today;
+    if (S.xp > 0) {
+      document.getElementById('bonusBar').style.display = 'flex';
+      setTimeout(() => { addXP(25, true); document.getElementById('bonusBar').style.display = 'none'; }, 2000);
+    }
+    saveS();
+  }
+  renderHome();
+  show('vHome');
+}
+
+// ─── VIEWS ───────────────────────────────────────────────────
+function show(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ─── XP & LEVELS ────────────────────────────────────────────
+function addXP(n, silent) {
+  const prev = getLevel(S.xp);
+  S.xp += n; S.sessXP += n; saveS();
+  refreshBadges();
+  if (!silent) popup(n);
+  const next = getLevel(S.xp);
+  if (next.n !== prev.n) levelUp(next.n);
+}
+
+function getLevel(xp) {
+  let l = LEVELS[0];
+  LEVELS.forEach(x => { if (xp >= x.min) l = x; });
+  return l;
+}
+
+function refreshBadges() {
+  document.getElementById('xpNum').textContent = S.xp;
+  document.getElementById('lvlPill').textContent = getLevel(S.xp).n;
+  document.getElementById('streakNum').textContent = S.streak;
+}
+
+function popup(n) {
+  const el = document.createElement('div');
+  el.className = 'xp-pop'; el.textContent = '+' + n + ' XP';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1400);
+}
+
+function levelUp(name) {
+  const el = document.createElement('div');
+  el.className = 'lvl-banner';
+  el.innerHTML = '<h2>LEVEL UP 🚀</h2><p>You\'re now <strong>' + name + '</strong></p>';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2800);
+}
+
+// ─── HOME ────────────────────────────────────────────────────
+function renderHome() {
+  S.sessXP = 0;
+  refreshBadges();
+  const pct = (S.done.length / MODS.length) * 100;
+  document.getElementById('progFill').style.width = pct + '%';
+  document.getElementById('progText').textContent = S.done.length + ' / ' + MODS.length;
+  const grid = document.getElementById('moduleGrid');
+  grid.innerHTML = '';
+  MODS.forEach((m, i) => {
+    const isDone = S.done.includes(m.id);
+    const isLocked = i > 0 && !S.done.includes(MODS[i-1].id);
+    const isCur = !isLocked && !isDone;
+    const card = document.createElement('div');
+    card.className = 'mod-card' + (isLocked?' locked':'') + (isDone?' done':'') + (isCur?' current':'');
+    card.innerHTML = '<span class="mod-emoji">' + (isLocked?'🔒':m.emoji) + '</span>' +
+      '<div class="mod-name">' + m.title + '</div>' +
+      '<div class="mod-sub">' + m.sub + '</div>' +
+      '<div class="mod-xp">' + (isDone ? '✓ Done' : '+' + m.xp + ' XP') + '</div>';
+    if (!isLocked) card.onclick = () => startMod(m.id);
+    grid.appendChild(card);
+  });
+}
+
+// ─── LESSONS ────────────────────────────────────────────────
+function startMod(id) {
+  curMod = id; curLesson = 0;
+  const m = MODS.find(x => x.id === id);
+  document.getElementById('lessonTitle').textContent = m.emoji + ' ' + m.title;
+  document.getElementById('lessonSub').textContent = m.sub;
+  renderLessonDots(m.lessons.length);
+  renderLesson(m.lessons[0]);
+  updateLessonNav(m);
+  show('vLesson');
+}
+
+function renderLessonDots(n) {
+  const c = document.getElementById('lessonDots');
+  c.innerHTML = '';
+  for (let i = 0; i < n; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i < curLesson ? ' done' : '');
+    d.id = 'ld' + i;
+    c.appendChild(d);
+  }
+}
+
+function renderLesson(l) {
+  const body = l.body.replace(/\n/g, '<br>');
+  const script = l.script ? '<div class="script-box">' + l.script + '</div>' : '';
+  const rule = l.rule ? '<div class="rule-box">⚡ ' + l.rule + '</div>' : '';
+  const typeLabel = l.type === 'action' ? '🎯 Action' : '📖 Concept';
+  document.getElementById('lessonBody').innerHTML =
+    '<div class="lesson-card">' +
+      '<div class="card-type">' + typeLabel + '</div>' +
+      '<div class="card-title">' + l.title + '</div>' +
+      '<div class="card-body">' + body + '</div>' +
+      script + rule +
+    '</div>';
+}
+
+function updateLessonNav(m) {
+  const isLast = curLesson === m.lessons.length - 1;
+  document.getElementById('btnPrev').style.display = curLesson > 0 ? 'block' : 'none';
+  document.getElementById('btnNext').textContent = isLast ? 'Start Drills →' : 'Continue →';
+}
+
+function nextLesson() {
+  const m = MODS.find(x => x.id === curMod);
+  const dot = document.getElementById('ld' + curLesson);
+  if (dot) dot.classList.add('done');
+  if (curLesson < m.lessons.length - 1) {
+    curLesson++;
+    renderLesson(m.lessons[curLesson]);
+    updateLessonNav(m);
+  } else {
+    startDrills(curMod);
+  }
+}
+
+function prevLesson() {
+  const m = MODS.find(x => x.id === curMod);
+  if (curLesson > 0) {
+    document.getElementById('ld' + curLesson).classList.remove('done');
+    curLesson--;
+    renderLesson(m.lessons[curLesson]);
+    updateLessonNav(m);
+  }
+}
+
+// ─── DRILLS ─────────────────────────────────────────────────
+function startDrills(id) {
+  curMod = id; curDrill = 0;
+  if (timerInt) { clearInterval(timerInt); timerInt = null; }
+  const m = MODS.find(x => x.id === id);
+  document.getElementById('drillTitle').textContent = m.emoji + ' Drills';
+  document.getElementById('drillSub').textContent = m.drills.length + ' drill' + (m.drills.length > 1 ? 's' : '') + ' — say it out loud';
+  renderDrillDots(m.drills.length);
+  renderDrill(m.drills[0]);
+  show('vDrill');
+}
+
+function renderDrillDots(n) {
+  const c = document.getElementById('drillDots');
+  c.innerHTML = '';
+  for (let i = 0; i < n; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i < curDrill ? ' done' : '');
+    d.id = 'dd' + i;
+    c.appendChild(d);
+  }
+}
+
+function renderDrill(d) {
+  const m = MODS.find(x => x.id === curMod);
+  const cnt = 'Drill ' + (curDrill + 1) + ' of ' + m.drills.length;
+  if (d.type === 'card') {
+    document.getElementById('drillBody').innerHTML =
+      '<div class="drill-card">' +
+        '<div class="drill-count">' + cnt + '</div>' +
+        '<div class="drill-label">They say / You\'re asked:</div>' +
+        '<div class="drill-q">' + d.prompt + '</div>' +
+        '<div class="drill-ans" id="dAns">' + d.ans + '</div>' +
+        '<button class="btn btn-primary" id="revBtn" onclick="revealAns()">Show Answer</button>' +
+        '<div class="rate-row" id="rateRow">' +
+          '<button class="rate-btn r-nailed" onclick="rate(\'nailed\',' + d.xp + ')">Nailed it<br>+' + d.xp + ' XP</button>' +
+          '<button class="rate-btn r-almost" onclick="rate(\'almost\',' + Math.floor(d.xp*0.5) + ')">Almost<br>+' + Math.floor(d.xp*0.5) + ' XP</button>' +
+          '<button class="rate-btn r-missed" onclick="rate(\'missed\',10)">Missed<br>+10 XP</button>' +
+        '</div>' +
+      '</div>';
+  } else {
+    document.getElementById('drillBody').innerHTML =
+      '<div class="drill-card">' +
+        '<div class="drill-count">' + cnt + '</div>' +
+        '<div class="drill-label">Say this out loud:</div>' +
+        '<div class="drill-q" style="font-style:italic;font-size:14px">' + d.script + '</div>' +
+        '<div class="timer-circle" id="tc">' + d.timer + '</div>' +
+        '<button class="btn btn-primary" id="startBtn" onclick="startTimer(' + d.timer + ',' + d.xp + ')">Start Timer</button>' +
+      '</div>';
+  }
+}
+
+function revealAns() {
+  document.getElementById('dAns').classList.add('show');
+  document.getElementById('revBtn').style.display = 'none';
+  document.getElementById('rateRow').classList.add('show');
+}
+
+function rate(r, xp) {
+  addXP(xp);
+  const dot = document.getElementById('dd' + curDrill);
+  if (dot) dot.classList.add('done');
+  const bg = r === 'nailed' ? 'rgba(52,211,153,0.15)' : r === 'almost' ? 'rgba(251,191,36,0.15)' : 'rgba(248,113,113,0.08)';
+  const card = document.querySelector('.drill-card');
+  if (card) { card.style.background = bg; setTimeout(advanceDrill, 380); }
+  else advanceDrill();
+}
+
+function startTimer(secs, xp) {
+  document.getElementById('startBtn').style.display = 'none';
+  let rem = secs;
+  const tc = document.getElementById('tc');
+  timerInt = setInterval(() => {
+    rem--;
+    if (tc) tc.textContent = rem;
+    if (rem <= 3 && tc) { tc.style.borderColor = 'var(--red)'; tc.style.boxShadow = '0 0 16px rgba(248,113,113,0.4)'; }
+    if (rem <= 0) {
+      clearInterval(timerInt); timerInt = null;
+      if (tc) { tc.textContent = '✓'; tc.style.borderColor = 'var(--green)'; tc.style.boxShadow = '0 0 16px rgba(52,211,153,0.4)'; }
+      addXP(xp);
+      const dot = document.getElementById('dd' + curDrill);
+      if (dot) dot.classList.add('done');
+      setTimeout(advanceDrill, 800);
+    }
+  }, 1000);
+}
+
+function advanceDrill() {
+  const m = MODS.find(x => x.id === curMod);
+  if (curDrill < m.drills.length - 1) {
+    curDrill++;
+    renderDrillDots(m.drills.length);
+    renderDrill(m.drills[curDrill]);
+  } else {
+    completeMod(curMod);
+  }
+}
+
+// ─── COMPLETE ────────────────────────────────────────────────
+function completeMod(id) {
+  const m = MODS.find(x => x.id === id);
+  if (!S.done.includes(id)) {
+    S.done.push(id);
+    addXP(m.xp);
+    saveS();
+    confetti();
+  }
+  const nx = MODS.find(x => x.id === id + 1);
+  document.getElementById('cEmoji').textContent = m.emoji;
+  document.getElementById('cTitle').textContent = m.title + ' — Done!';
+  document.getElementById('cSub').textContent = S.done.length + ' of ' + MODS.length + ' modules complete.';
+  document.getElementById('cXP').textContent = '+' + S.sessXP + ' XP';
+  document.getElementById('cNext').innerHTML = nx
+    ? '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;text-align:center"><div style="font-size:10px;color:var(--muted);margin-bottom:5px">NEXT UP</div><div style="font-size:16px;font-weight:800">' + nx.emoji + ' ' + nx.title + '</div><div style="font-size:11px;color:var(--muted);margin-top:3px">' + nx.sub + '</div></div>'
+    : '<div style="background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.3);border-radius:var(--r);padding:18px;text-align:center;color:var(--green);font-weight:800">🏆 YOU FINISHED THE ENTIRE COURSE</div>';
+  show('vComplete');
+}
+
+function confetti() {
+  const cols = ['#818cf8','#a78bfa','#34d399','#fbbf24','#f87171','#60a5fa'];
+  for (let i = 0; i < 55; i++) {
+    setTimeout(() => {
+      const el = document.createElement('div');
+      el.className = 'confetti';
+      el.style.cssText = 'left:' + (Math.random()*100) + 'vw;background:' + cols[Math.floor(Math.random()*cols.length)] + ';animation-duration:' + (1.4+Math.random()*0.8) + 's;animation-delay:' + (Math.random()*0.4) + 's;border-radius:' + (Math.random()>0.5?'50%':'2px');
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 2400);
+    }, i * 18);
+  }
+}
+
+// ─── ROLEPLAY ────────────────────────────────────────────────
+let rpIdx = 0;
+
+function startRoleplay() {
+  rpIdx = 0;
+  renderRP();
+  show('vRoleplay');
+}
+
+function renderRP() {
+  const body = document.getElementById('rpBody');
+  if (rpIdx >= ROLEPLAY.length) {
+    body.innerHTML = '<div class="rp-card" style="text-align:center;padding:36px 20px"><div style="font-size:52px;margin-bottom:14px">🏆</div><div style="font-size:22px;font-weight:900;margin-bottom:8px">Full Call Complete!</div><div style="color:var(--muted);font-size:13px;margin-bottom:22px">Start to close — you ran the whole thing.</div><button class="btn btn-primary" onclick="rpIdx=0;renderRP()">Run It Again</button></div>';
+    addXP(100);
+    return;
+  }
+  const step = ROLEPLAY[rpIdx];
+  let prev = '';
+  for (let i = Math.max(0, rpIdx - 3); i < rpIdx; i++) {
+    const s = ROLEPLAY[i];
+    if (s.who === 'client') prev += '<div class="client-bubble">👤 "' + s.text + '"</div>';
+  }
+  if (step.who === 'you') {
+    body.innerHTML = prev + '<div class="rp-card"><div class="rp-label" style="color:var(--accent)">YOUR TURN</div><div class="rp-text">' + step.text + '</div><button class="btn btn-primary" onclick="rpIdx++;renderRP()">I said it → Show answer</button></div>';
+  } else if (step.who === 'ans') {
+    body.innerHTML = prev + '<div class="rp-card" style="border-color:rgba(129,140,248,0.4)"><div class="rp-label" style="color:var(--accent)">THE ANSWER</div><div class="rp-ans-box">' + step.text + '</div><button class="btn btn-primary" onclick="rpIdx++;renderRP()">Continue →</button></div>';
+  } else {
+    body.innerHTML = prev + '<div class="rp-card" style="border-color:rgba(52,211,153,0.3)"><div class="rp-label" style="color:var(--green)">CLIENT SAYS</div><div class="rp-text">"' + step.text + '"</div><button class="btn btn-primary" onclick="rpIdx++;renderRP()">Next →</button></div>';
+  }
+  document.getElementById('rpSub').textContent = 'Step ' + (rpIdx + 1) + ' of ' + ROLEPLAY.length;
+}
+
+// ─── GO ──────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
