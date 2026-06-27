@@ -25,19 +25,22 @@
         <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-sm font-bold">PF</div>
         <div>
           <h1 class="font-semibold text-sm">Prospect Finder</h1>
-          <p class="text-xs text-neutral-500">SF leads for Leo's web biz</p>
+          <p class="text-xs text-neutral-500">SF barbershop leads for Leo</p>
         </div>
       </div>
-      <div id="api-status" class="text-xs text-neutral-500 flex items-center gap-1.5">
-        <span class="w-1.5 h-1.5 rounded-full bg-neutral-600 inline-block"></span>
-        checking...
+      <div class="flex items-center gap-4">
+        <span id="seen-count" class="text-xs text-neutral-600"></span>
+        <div id="api-status" class="text-xs text-neutral-500 flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-neutral-600 inline-block"></span>
+          checking...
+        </div>
       </div>
     </div>
   </header>
 
   <main class="max-w-5xl mx-auto px-6 py-10">
 
-    <!-- ── CONFIG SECTION ── -->
+    <!-- ── CONFIG ── -->
     <section id="config-section" class="fade-in">
 
       <!-- Step 1: Business Type -->
@@ -45,19 +48,19 @@
         <p class="text-xs font-medium text-neutral-500 uppercase tracking-widest mb-4">Step 1 — What are you looking for?</p>
         <div class="grid grid-cols-3 gap-4">
           <button id="btn-barbershops" onclick="selectType('barbershops')"
-            class="type-btn text-left p-5 rounded-xl border border-neutral-800 bg-neutral-900 hover:border-blue-500 transition-all duration-200 cursor-pointer">
+            class="type-btn text-left p-5 rounded-xl border border-neutral-800 bg-neutral-900 hover:border-blue-500 transition-all cursor-pointer">
             <div class="text-3xl mb-3">✂️</div>
             <div class="font-semibold text-sm">Barbershops</div>
             <div class="text-xs text-neutral-500 mt-1">Hair + grooming</div>
           </button>
           <button id="btn-pet-groomers" onclick="selectType('pet-groomers')"
-            class="type-btn text-left p-5 rounded-xl border border-neutral-800 bg-neutral-900 hover:border-blue-500 transition-all duration-200 cursor-pointer">
+            class="type-btn text-left p-5 rounded-xl border border-neutral-800 bg-neutral-900 hover:border-blue-500 transition-all cursor-pointer">
             <div class="text-3xl mb-3">🐕</div>
             <div class="font-semibold text-sm">Pet Groomers</div>
             <div class="text-xs text-neutral-500 mt-1">Dog + cat grooming</div>
           </button>
           <button id="btn-cafes" onclick="selectType('cafes')"
-            class="type-btn text-left p-5 rounded-xl border border-neutral-800 bg-neutral-900 hover:border-blue-500 transition-all duration-200 cursor-pointer">
+            class="type-btn text-left p-5 rounded-xl border border-neutral-800 bg-neutral-900 hover:border-blue-500 transition-all cursor-pointer">
             <div class="text-3xl mb-3">☕</div>
             <div class="font-semibold text-sm">Cafes</div>
             <div class="text-xs text-neutral-500 mt-1">Coffee + bakeries</div>
@@ -67,83 +70,133 @@
 
       <!-- Step 2: Neighborhoods -->
       <div class="mb-10">
-        <p class="text-xs font-medium text-neutral-500 uppercase tracking-widest mb-4">Step 2 — Which neighborhoods?</p>
-        <div class="grid grid-cols-2 gap-3">
-          <label class="flex items-center gap-4 p-4 rounded-xl border border-neutral-800 bg-neutral-900 cursor-pointer hover:border-blue-500 transition-all duration-200">
-            <input type="checkbox" value="inner-sunset" class="hood-check w-4 h-4 accent-blue-500 cursor-pointer" checked />
-            <div>
-              <div class="font-medium text-sm">Inner Sunset</div>
-              <div class="text-xs text-neutral-500">9th Ave · near UCSF</div>
-            </div>
+        <div class="flex items-center justify-between mb-4">
+          <p class="text-xs font-medium text-neutral-500 uppercase tracking-widest">Step 2 — Which neighborhoods?</p>
+          <button onclick="toggleAllHoods()" id="toggle-all-btn"
+            class="text-xs font-medium text-blue-400 hover:text-blue-300 transition-all">
+            Select All SF
+          </button>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <label class="flex items-center gap-3 p-3 rounded-xl border border-neutral-800 bg-neutral-900 cursor-pointer hover:border-blue-500 transition-all">
+            <input type="checkbox" value="inner-sunset" class="hood-check w-4 h-4 accent-blue-500" checked />
+            <div><div class="font-medium text-sm">Inner Sunset</div><div class="text-xs text-neutral-500">9th Ave · near UCSF</div></div>
           </label>
-          <label class="flex items-center gap-4 p-4 rounded-xl border border-neutral-800 bg-neutral-900 cursor-pointer hover:border-blue-500 transition-all duration-200">
-            <input type="checkbox" value="outer-sunset" class="hood-check w-4 h-4 accent-blue-500 cursor-pointer" />
-            <div>
-              <div class="font-medium text-sm">Outer Sunset</div>
-              <div class="text-xs text-neutral-500">Toward Ocean Beach</div>
-            </div>
+          <label class="flex items-center gap-3 p-3 rounded-xl border border-neutral-800 bg-neutral-900 cursor-pointer hover:border-blue-500 transition-all">
+            <input type="checkbox" value="outer-sunset" class="hood-check w-4 h-4 accent-blue-500" checked />
+            <div><div class="font-medium text-sm">Outer Sunset</div><div class="text-xs text-neutral-500">Toward Ocean Beach</div></div>
           </label>
-          <label class="flex items-center gap-4 p-4 rounded-xl border border-neutral-800 bg-neutral-900 cursor-pointer hover:border-blue-500 transition-all duration-200">
-            <input type="checkbox" value="inner-richmond" class="hood-check w-4 h-4 accent-blue-500 cursor-pointer" />
-            <div>
-              <div class="font-medium text-sm">Inner Richmond</div>
-              <div class="text-xs text-neutral-500">Clement St · near the park</div>
-            </div>
+          <label class="flex items-center gap-3 p-3 rounded-xl border border-neutral-800 bg-neutral-900 cursor-pointer hover:border-blue-500 transition-all">
+            <input type="checkbox" value="inner-richmond" class="hood-check w-4 h-4 accent-blue-500" checked />
+            <div><div class="font-medium text-sm">Inner Richmond</div><div class="text-xs text-neutral-500">Clement St · near the park</div></div>
           </label>
-          <label class="flex items-center gap-4 p-4 rounded-xl border border-neutral-800 bg-neutral-900 cursor-pointer hover:border-blue-500 transition-all duration-200">
-            <input type="checkbox" value="outer-richmond" class="hood-check w-4 h-4 accent-blue-500 cursor-pointer" />
-            <div>
-              <div class="font-medium text-sm">Outer Richmond</div>
-              <div class="text-xs text-neutral-500">Near Golden Gate Park</div>
-            </div>
+          <label class="flex items-center gap-3 p-3 rounded-xl border border-neutral-800 bg-neutral-900 cursor-pointer hover:border-blue-500 transition-all">
+            <input type="checkbox" value="outer-richmond" class="hood-check w-4 h-4 accent-blue-500" checked />
+            <div><div class="font-medium text-sm">Outer Richmond</div><div class="text-xs text-neutral-500">Near Golden Gate Park</div></div>
+          </label>
+          <label class="flex items-center gap-3 p-3 rounded-xl border border-neutral-800 bg-neutral-900 cursor-pointer hover:border-blue-500 transition-all">
+            <input type="checkbox" value="mission" class="hood-check w-4 h-4 accent-blue-500" />
+            <div><div class="font-medium text-sm">Mission District</div><div class="text-xs text-neutral-500">Valencia · 24th St</div></div>
+          </label>
+          <label class="flex items-center gap-3 p-3 rounded-xl border border-neutral-800 bg-neutral-900 cursor-pointer hover:border-blue-500 transition-all">
+            <input type="checkbox" value="castro" class="hood-check w-4 h-4 accent-blue-500" />
+            <div><div class="font-medium text-sm">Castro</div><div class="text-xs text-neutral-500">Castro St · Upper Market</div></div>
+          </label>
+          <label class="flex items-center gap-3 p-3 rounded-xl border border-neutral-800 bg-neutral-900 cursor-pointer hover:border-blue-500 transition-all">
+            <input type="checkbox" value="noe-valley" class="hood-check w-4 h-4 accent-blue-500" />
+            <div><div class="font-medium text-sm">Noe Valley</div><div class="text-xs text-neutral-500">24th St · quiet residential</div></div>
+          </label>
+          <label class="flex items-center gap-3 p-3 rounded-xl border border-neutral-800 bg-neutral-900 cursor-pointer hover:border-blue-500 transition-all">
+            <input type="checkbox" value="haight" class="hood-check w-4 h-4 accent-blue-500" />
+            <div><div class="font-medium text-sm">Haight-Ashbury</div><div class="text-xs text-neutral-500">Upper Haight</div></div>
+          </label>
+          <label class="flex items-center gap-3 p-3 rounded-xl border border-neutral-800 bg-neutral-900 cursor-pointer hover:border-blue-500 transition-all">
+            <input type="checkbox" value="lower-haight" class="hood-check w-4 h-4 accent-blue-500" />
+            <div><div class="font-medium text-sm">Lower Haight</div><div class="text-xs text-neutral-500">Fillmore · Steiner</div></div>
+          </label>
+          <label class="flex items-center gap-3 p-3 rounded-xl border border-neutral-800 bg-neutral-900 cursor-pointer hover:border-blue-500 transition-all">
+            <input type="checkbox" value="north-beach" class="hood-check w-4 h-4 accent-blue-500" />
+            <div><div class="font-medium text-sm">North Beach</div><div class="text-xs text-neutral-500">Columbus Ave · Italian district</div></div>
+          </label>
+          <label class="flex items-center gap-3 p-3 rounded-xl border border-neutral-800 bg-neutral-900 cursor-pointer hover:border-blue-500 transition-all">
+            <input type="checkbox" value="marina" class="hood-check w-4 h-4 accent-blue-500" />
+            <div><div class="font-medium text-sm">Marina</div><div class="text-xs text-neutral-500">Chestnut · Union St</div></div>
+          </label>
+          <label class="flex items-center gap-3 p-3 rounded-xl border border-neutral-800 bg-neutral-900 cursor-pointer hover:border-blue-500 transition-all">
+            <input type="checkbox" value="pacific-heights" class="hood-check w-4 h-4 accent-blue-500" />
+            <div><div class="font-medium text-sm">Pacific Heights</div><div class="text-xs text-neutral-500">Fillmore St · affluent</div></div>
+          </label>
+          <label class="flex items-center gap-3 p-3 rounded-xl border border-neutral-800 bg-neutral-900 cursor-pointer hover:border-blue-500 transition-all">
+            <input type="checkbox" value="fillmore" class="hood-check w-4 h-4 accent-blue-500" />
+            <div><div class="font-medium text-sm">Fillmore / NOPA</div><div class="text-xs text-neutral-500">Western Addition</div></div>
+          </label>
+          <label class="flex items-center gap-3 p-3 rounded-xl border border-neutral-800 bg-neutral-900 cursor-pointer hover:border-blue-500 transition-all">
+            <input type="checkbox" value="bernal-heights" class="hood-check w-4 h-4 accent-blue-500" />
+            <div><div class="font-medium text-sm">Bernal Heights</div><div class="text-xs text-neutral-500">Cortland Ave</div></div>
+          </label>
+          <label class="flex items-center gap-3 p-3 rounded-xl border border-neutral-800 bg-neutral-900 cursor-pointer hover:border-blue-500 transition-all">
+            <input type="checkbox" value="excelsior" class="hood-check w-4 h-4 accent-blue-500" />
+            <div><div class="font-medium text-sm">Excelsior</div><div class="text-xs text-neutral-500">Mission St · southern SF</div></div>
+          </label>
+          <label class="flex items-center gap-3 p-3 rounded-xl border border-neutral-800 bg-neutral-900 cursor-pointer hover:border-blue-500 transition-all">
+            <input type="checkbox" value="portola" class="hood-check w-4 h-4 accent-blue-500" />
+            <div><div class="font-medium text-sm">Portola</div><div class="text-xs text-neutral-500">San Bruno Ave</div></div>
+          </label>
+          <label class="flex items-center gap-3 p-3 rounded-xl border border-neutral-800 bg-neutral-900 cursor-pointer hover:border-blue-500 transition-all">
+            <input type="checkbox" value="bayview" class="hood-check w-4 h-4 accent-blue-500" />
+            <div><div class="font-medium text-sm">Bayview</div><div class="text-xs text-neutral-500">3rd St · southeastern SF</div></div>
+          </label>
+          <label class="flex items-center gap-3 p-3 rounded-xl border border-neutral-800 bg-neutral-900 cursor-pointer hover:border-blue-500 transition-all">
+            <input type="checkbox" value="potrero-hill" class="hood-check w-4 h-4 accent-blue-500" />
+            <div><div class="font-medium text-sm">Potrero Hill</div><div class="text-xs text-neutral-500">18th St · Connecticut St</div></div>
+          </label>
+          <label class="flex items-center gap-3 p-3 rounded-xl border border-neutral-800 bg-neutral-900 cursor-pointer hover:border-blue-500 transition-all">
+            <input type="checkbox" value="glen-park" class="hood-check w-4 h-4 accent-blue-500" />
+            <div><div class="font-medium text-sm">Glen Park</div><div class="text-xs text-neutral-500">Diamond St · village feel</div></div>
+          </label>
+          <label class="flex items-center gap-3 p-3 rounded-xl border border-neutral-800 bg-neutral-900 cursor-pointer hover:border-blue-500 transition-all">
+            <input type="checkbox" value="west-portal" class="hood-check w-4 h-4 accent-blue-500" />
+            <div><div class="font-medium text-sm">West Portal</div><div class="text-xs text-neutral-500">West Portal Ave</div></div>
+          </label>
+          <label class="flex items-center gap-3 p-3 rounded-xl border border-neutral-800 bg-neutral-900 cursor-pointer hover:border-blue-500 transition-all">
+            <input type="checkbox" value="soma" class="hood-check w-4 h-4 accent-blue-500" />
+            <div><div class="font-medium text-sm">SoMa</div><div class="text-xs text-neutral-500">South of Market</div></div>
+          </label>
+          <label class="flex items-center gap-3 p-3 rounded-xl border border-neutral-800 bg-neutral-900 cursor-pointer hover:border-blue-500 transition-all">
+            <input type="checkbox" value="visitacion-valley" class="hood-check w-4 h-4 accent-blue-500" />
+            <div><div class="font-medium text-sm">Visitacion Valley</div><div class="text-xs text-neutral-500">Leland Ave · south SF</div></div>
           </label>
         </div>
       </div>
 
-      <!-- Step 3: Calendly -->
-      <div class="mb-10">
-        <p class="text-xs font-medium text-neutral-500 uppercase tracking-widest mb-4">Step 3 — Your booking link</p>
-        <input
-          id="calendly-url"
-          type="url"
-          value="https://calendly.com/leomoroz09"
-          placeholder="https://calendly.com/yourname"
-          class="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-all placeholder-neutral-600"
-        />
-        <p class="text-xs text-neutral-600 mt-2">This goes in every email's CTA.</p>
-      </div>
-
-      <!-- Run button -->
       <button onclick="runAnalysis()"
-        class="w-full bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white py-4 rounded-xl font-semibold text-sm transition-all duration-200 shadow-lg shadow-blue-600/20">
+        class="w-full bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white py-4 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-blue-600/20">
         Find My Top 20 Prospects →
+      </button>
+
+      <button onclick="clearMemory()"
+        class="w-full mt-3 py-3 rounded-xl text-xs text-neutral-600 hover:text-neutral-400 transition-all">
+        Reset memory — show all prospects again
       </button>
 
     </section>
 
-    <!-- ── PROGRESS SECTION ── -->
+    <!-- ── PROGRESS ── -->
     <section id="progress-section" class="hidden fade-in">
       <div class="bg-neutral-900 border border-neutral-800 rounded-2xl p-8">
-
         <div class="flex items-center justify-between mb-2">
           <h2 id="progress-title" class="font-semibold text-sm">Searching Google Maps...</h2>
           <span id="progress-count" class="text-xs text-neutral-500 tabular-nums"></span>
         </div>
-
         <div class="w-full bg-neutral-800 rounded-full h-1.5 mb-6 overflow-hidden">
           <div id="progress-bar" class="bg-blue-500 h-1.5 rounded-full transition-all duration-500" style="width:0%"></div>
         </div>
-
-        <div id="progress-log" class="space-y-1.5 max-h-72 overflow-y-auto text-xs text-neutral-400 font-mono">
-          <!-- live entries appended here -->
-        </div>
+        <div id="progress-log" class="space-y-1.5 max-h-72 overflow-y-auto text-xs text-neutral-400 font-mono"></div>
       </div>
     </section>
 
-    <!-- ── RESULTS SECTION ── -->
+    <!-- ── RESULTS ── -->
     <section id="results-section" class="hidden fade-in">
-
-      <!-- Toolbar -->
       <div class="flex items-center justify-between mb-6">
         <div>
           <h2 class="font-bold text-lg">Top Prospects</h2>
@@ -161,120 +214,49 @@
         </div>
       </div>
 
-      <!-- Table -->
       <div class="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden">
         <table class="w-full">
           <thead>
             <tr class="border-b border-neutral-800">
               <th class="text-left text-xs text-neutral-500 font-medium px-5 py-3 uppercase tracking-wider w-8">#</th>
               <th class="text-left text-xs text-neutral-500 font-medium px-4 py-3 uppercase tracking-wider">Business</th>
-              <th class="text-left text-xs text-neutral-500 font-medium px-4 py-3 uppercase tracking-wider">Location</th>
-              <th class="text-left text-xs text-neutral-500 font-medium px-4 py-3 uppercase tracking-wider">Web Status</th>
-              <th class="text-center text-xs text-neutral-500 font-medium px-4 py-3 uppercase tracking-wider">Conv. %</th>
-              <th class="px-5 py-3 w-28"></th>
+              <th class="text-left text-xs text-neutral-500 font-medium px-4 py-3 uppercase tracking-wider">Address</th>
+              <th class="text-left text-xs text-neutral-500 font-medium px-4 py-3 uppercase tracking-wider">Web</th>
+              <th class="text-left text-xs text-neutral-500 font-medium px-4 py-3 uppercase tracking-wider">Source</th>
+              <th class="text-center text-xs text-neutral-500 font-medium px-4 py-3 uppercase tracking-wider">Conv %</th>
             </tr>
           </thead>
-          <tbody id="results-tbody">
-            <!-- rows injected by JS -->
-          </tbody>
+          <tbody id="results-tbody"></tbody>
         </table>
       </div>
-
-      <!-- Hint -->
-      <p class="text-xs text-neutral-600 mt-4 text-center">Click "View Email" to generate a personalized cold email for any prospect. CSV includes everything.</p>
     </section>
 
   </main>
 
-  <!-- ── EMAIL MODAL ── -->
-  <div id="email-modal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4" onclick="handleModalBackdrop(event)">
-    <div class="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-2xl max-h-[88vh] overflow-y-auto shadow-2xl">
-      <div class="p-6">
-
-        <!-- Modal header -->
-        <div class="flex items-start justify-between mb-6">
-          <div>
-            <h3 id="modal-business-name" class="font-bold text-base"></h3>
-            <p id="modal-business-meta" class="text-xs text-neutral-500 mt-0.5"></p>
-          </div>
-          <button onclick="closeModal()" class="text-neutral-600 hover:text-white transition-all text-2xl leading-none ml-4 mt-0.5">×</button>
-        </div>
-
-        <!-- Loading state -->
-        <div id="modal-loading" class="text-center py-12">
-          <div class="spin text-4xl mb-4">◌</div>
-          <p class="text-sm text-neutral-400">Writing your email...</p>
-        </div>
-
-        <!-- Email content -->
-        <div id="modal-content" class="hidden">
-
-          <div class="mb-4">
-            <p class="text-xs text-neutral-500 uppercase tracking-wider mb-2">Subject Line</p>
-            <div id="modal-subject" class="bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-sm font-medium"></div>
-          </div>
-
-          <div class="mb-6">
-            <p class="text-xs text-neutral-500 uppercase tracking-wider mb-2">Email Body</p>
-            <div id="modal-body" class="bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-4 text-sm leading-relaxed whitespace-pre-wrap"></div>
-          </div>
-
-          <!-- Website flaws (if any) -->
-          <div id="modal-flaws-section" class="hidden mb-6">
-            <p class="text-xs text-neutral-500 uppercase tracking-wider mb-2">Website Issues Detected</p>
-            <ul id="modal-flaws-list" class="space-y-1"></ul>
-          </div>
-
-          <div class="flex gap-3">
-            <button onclick="copyEmail()"
-              class="flex-1 bg-blue-600 hover:bg-blue-500 py-3 rounded-xl text-sm font-semibold transition-all">
-              Copy Email
-            </button>
-            <button onclick="regenerateEmail()"
-              class="px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-xl text-xs hover:border-blue-500 transition-all">
-              Regenerate
-            </button>
-          </div>
-
-          <p id="copy-confirm" class="hidden text-center text-xs text-green-400 mt-3">Copied to clipboard.</p>
-        </div>
-
-        <!-- Error state -->
-        <div id="modal-error" class="hidden text-center py-8">
-          <p class="text-sm text-red-400 mb-3" id="modal-error-msg">Something went wrong.</p>
-          <button onclick="regenerateEmail()" class="px-4 py-2 bg-neutral-800 rounded-lg text-xs hover:bg-neutral-700 transition-all">Try Again</button>
-        </div>
-
-      </div>
-    </div>
-  </div>
-
   <script>
-    // ── State ──────────────────────────────────────────────────────
     let selectedType = 'barbershops';
     let prospects = [];
-    let emailCache = {};
-    let currentProspectId = null;
+    let healthData = {};
 
-    // ── Init ───────────────────────────────────────────────────────
     async function init() {
       selectType('barbershops');
       try {
-        const health = await fetch('/api/health').then(r => r.json());
+        healthData = await fetch('/api/health').then(r => r.json());
         const el = document.getElementById('api-status');
-        if (health.foursquare) {
-          el.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span> API ready';
+        const sources = [healthData.serpapi && 'Google', healthData.yelp && 'Yelp'].filter(Boolean);
+        if (sources.length) {
+          el.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span> ' + sources.join(' + ') + ' ready';
           el.className = 'text-xs text-green-400 flex items-center gap-1.5';
         } else {
-          el.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"></span> Missing: FOURSQUARE_API_KEY';
+          el.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"></span> No API keys configured';
           el.className = 'text-xs text-red-400 flex items-center gap-1.5';
         }
-      } catch {
-        // server might not have the endpoint yet
-      }
+        if (healthData.seen > 0) {
+          document.getElementById('seen-count').textContent = healthData.seen + ' prospects in memory';
+        }
+      } catch {}
     }
 
-    // ── Business type selection ─────────────────────────────────────
     function selectType(type) {
       selectedType = type;
       document.querySelectorAll('.type-btn').forEach(btn => {
@@ -286,9 +268,15 @@
       btn.classList.add('border-blue-500', 'bg-blue-950');
     }
 
-    // ── Helpers ─────────────────────────────────────────────────────
     function getNeighborhoods() {
       return Array.from(document.querySelectorAll('.hood-check:checked')).map(el => el.value);
+    }
+
+    function toggleAllHoods() {
+      const all = document.querySelectorAll('.hood-check');
+      const anyUnchecked = Array.from(all).some(el => !el.checked);
+      all.forEach(el => el.checked = anyUnchecked);
+      document.getElementById('toggle-all-btn').textContent = anyUnchecked ? 'Deselect All' : 'Select All SF';
     }
 
     function esc(str) {
@@ -300,10 +288,7 @@
     function logLine(msg, type) {
       const el = document.getElementById('progress-log');
       const div = document.createElement('div');
-      if (type === 'success') div.className = 'text-green-400';
-      else if (type === 'error') div.className = 'text-red-400';
-      else if (type === 'dim') div.className = 'text-neutral-600';
-      else div.className = 'text-neutral-400';
+      div.className = type === 'success' ? 'text-green-400' : type === 'error' ? 'text-red-400' : type === 'dim' ? 'text-neutral-600' : 'text-neutral-400';
       div.textContent = msg;
       el.appendChild(div);
       el.scrollTop = el.scrollHeight;
@@ -317,86 +302,72 @@
     }
 
     async function post(url, data) {
-      const r = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
+      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
       const json = await r.json();
       if (!r.ok) throw new Error(json.error || r.statusText);
       return json;
     }
 
-    // ── Main analysis flow ──────────────────────────────────────────
     async function runAnalysis() {
       const neighborhoods = getNeighborhoods();
-      if (!neighborhoods.length) {
-        alert('Pick at least one neighborhood.');
-        return;
-      }
+      if (!neighborhoods.length) { alert('Pick at least one neighborhood.'); return; }
 
-      // Show progress UI
       document.getElementById('config-section').classList.add('hidden');
       document.getElementById('progress-section').classList.remove('hidden');
       document.getElementById('results-section').classList.add('hidden');
       document.getElementById('progress-log').innerHTML = '';
 
       try {
-        // Step 1: Search
-        setProgress(0, null, 'Searching Google Maps...');
-        logLine('Searching for ' + selectedType + ' in ' + neighborhoods.length + ' neighborhood(s)...');
+        const sources = [healthData.serpapi && 'Google', healthData.yelp && 'Yelp'].filter(Boolean);
+        setProgress(0, null, 'Searching ' + sources.join(' + ') + '...');
+        logLine('Searching ' + neighborhoods.length + ' neighborhood(s) via ' + sources.join(' + ') + '...');
 
-        const { businesses } = await post('/api/search', { businessType: selectedType, neighborhoods });
-        logLine('Found ' + businesses.length + ' total businesses.', 'success');
+        const { businesses, skipped } = await post('/api/search', { businessType: selectedType, neighborhoods });
+
+        if (skipped > 0) logLine(skipped + ' already-found prospects skipped.', 'dim');
+        logLine('Found ' + businesses.length + ' new businesses.', 'success');
         logLine('');
 
         if (!businesses.length) {
-          logLine('No results returned. Check your API key or try different neighborhoods.', 'error');
+          logLine('No new results — try more neighborhoods or reset memory.', 'error');
+          setTimeout(() => {
+            document.getElementById('config-section').classList.remove('hidden');
+            document.getElementById('progress-section').classList.add('hidden');
+          }, 3000);
           return;
         }
 
-        // Step 2: Analyze in batches of 3
+        // Analyze in batches of 3
         const analyzed = [];
-        const BATCH = 3;
+        setProgress(0, businesses.length, 'Checking websites...');
 
-        setProgress(0, businesses.length, 'Analyzing websites...');
-
-        for (let i = 0; i < businesses.length; i += BATCH) {
-          const batch = businesses.slice(i, i + BATCH);
-
-          const results = await Promise.all(
-            batch.map(b => post('/api/analyze', { business: b }).catch(() => null))
-          );
+        for (let i = 0; i < businesses.length; i += 3) {
+          const batch = businesses.slice(i, i + 3);
+          const results = await Promise.all(batch.map(b => post('/api/analyze', { business: b }).catch(() => null)));
 
           for (let j = 0; j < results.length; j++) {
             const r = results[j];
-            const b = batch[j];
-            if (!r) {
-              logLine('  Skipped: ' + b.name, 'dim');
-              continue;
-            }
+            if (!r) { logLine('  Skipped: ' + batch[j].name, 'dim'); continue; }
             analyzed.push(r);
-
-            const tag = !r.hasRealWebsite
-              ? (r.hasSocialOnly ? '(social only)' : '(no website)')
-              : '(site score: ' + r.websiteScore + '/10)';
+            const tag = !r.hasRealWebsite ? (r.hasSocialOnly ? '(social only)' : '(no website)') : '(site ' + r.websiteScore + '/10)';
             logLine('  ' + r.conversionScore + '% — ' + r.name + ' ' + tag, 'success');
           }
 
-          setProgress(Math.min(i + BATCH, businesses.length), businesses.length, 'Analyzing websites...');
+          setProgress(Math.min(i + 3, businesses.length), businesses.length, 'Checking websites...');
         }
 
-        logLine('');
-        logLine('Analysis complete. Ranking prospects...', 'success');
+        const worthCalling = analyzed.filter(p => p.conversionScore >= 45);
+        const filtered = analyzed.length - worthCalling.length;
+        if (filtered > 0) logLine(filtered + ' skipped — decent websites, not worth calling.', 'dim');
+        prospects = worthCalling.sort((a, b) => b.conversionScore - a.conversionScore).slice(0, 20);
 
-        // Step 3: Sort and cap at 20
-        prospects = analyzed
-          .sort((a, b) => b.conversionScore - a.conversionScore)
-          .slice(0, 20);
+        // Mark as seen
+        await post('/api/seen', { ids: prospects.map(p => p.id) });
+        document.getElementById('seen-count').textContent = (skipped + prospects.length) + ' prospects in memory';
 
         setProgress(100, 100, 'Done.');
-        logLine('Top ' + prospects.length + ' prospects selected.', 'success');
-
+        logLine('');
+        logLine('Top ' + prospects.length + ' prospects ready.', 'success');
         setTimeout(showResults, 700);
 
       } catch (err) {
@@ -409,175 +380,83 @@
       }
     }
 
-    // ── Render results table ─────────────────────────────────────────
     function showResults() {
       document.getElementById('progress-section').classList.add('hidden');
       document.getElementById('results-section').classList.remove('hidden');
-      document.getElementById('results-subtitle').textContent =
-        prospects.length + ' prospects ranked by conversion likelihood';
+      document.getElementById('results-subtitle').textContent = prospects.length + ' prospects ranked by conversion likelihood';
 
       const tbody = document.getElementById('results-tbody');
       tbody.innerHTML = '';
 
       prospects.forEach((p, i) => {
-        const scoreColor =
-          p.conversionScore >= 70 ? 'text-green-400' :
-          p.conversionScore >= 45 ? 'text-yellow-400' : 'text-red-400';
+        const scoreColor = p.conversionScore >= 70 ? 'text-green-400' : p.conversionScore >= 45 ? 'text-yellow-400' : 'text-red-400';
 
         let webBadge = '';
-        if (!p.hasRealWebsite && !p.hasSocialOnly) {
+        if (!p.hasRealWebsite && !p.hasSocialOnly)
           webBadge = '<span class="text-xs bg-red-500/15 text-red-400 px-2 py-0.5 rounded-full">No website</span>';
-        } else if (p.hasSocialOnly) {
+        else if (p.hasSocialOnly)
           webBadge = '<span class="text-xs bg-orange-500/15 text-orange-400 px-2 py-0.5 rounded-full">Social only</span>';
-        } else {
-          const scoreClass = p.websiteScore <= 4 ? 'text-orange-400 bg-orange-500/15' : p.websiteScore <= 6 ? 'text-yellow-400 bg-yellow-500/15' : 'text-green-400 bg-green-500/15';
-          webBadge = '<span class="text-xs ' + scoreClass + ' px-2 py-0.5 rounded-full">Site: ' + p.websiteScore + '/10</span>';
+        else {
+          const cls = p.websiteScore <= 4 ? 'text-orange-400 bg-orange-500/15' : p.websiteScore <= 6 ? 'text-yellow-400 bg-yellow-500/15' : 'text-green-400 bg-green-500/15';
+          webBadge = '<span class="text-xs ' + cls + ' px-2 py-0.5 rounded-full">Site ' + p.websiteScore + '/10</span>';
         }
 
         const tr = document.createElement('tr');
         tr.className = 'border-b border-neutral-800/50 hover:bg-neutral-800/30 transition-all';
+        const srcBadge = p.source === 'yelp'
+          ? '<span class="text-xs bg-red-500/15 text-red-300 px-2 py-0.5 rounded-full">Yelp</span>'
+          : '<span class="text-xs bg-blue-500/15 text-blue-400 px-2 py-0.5 rounded-full">Google</span>';
+
         tr.innerHTML = `
           <td class="px-5 py-4 text-neutral-600 text-sm tabular-nums">${i + 1}</td>
           <td class="px-4 py-4">
             <div class="font-medium text-sm">${esc(p.name)}</div>
-            <div class="text-xs text-neutral-600 mt-0.5">${esc(p.phone || '')}</div>
+            <div class="text-xs text-neutral-500 mt-0.5">${esc(p.phone || '—')}</div>
           </td>
-          <td class="px-4 py-4">
-            <div class="text-xs text-neutral-400 max-w-xs">${esc(p.address)}</div>
-          </td>
+          <td class="px-4 py-4 text-xs text-neutral-400 max-w-xs">${esc(p.address)}</td>
           <td class="px-4 py-4">${webBadge}</td>
+          <td class="px-4 py-4">${srcBadge}</td>
           <td class="px-4 py-4 text-center">
             <span class="font-bold text-sm tabular-nums ${scoreColor}">${p.conversionScore}%</span>
-          </td>
-          <td class="px-5 py-4">
-            <button onclick="openEmailModal('${esc(p.id)}')"
-              class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-medium transition-all whitespace-nowrap">
-              View Email
-            </button>
           </td>
         `;
         tbody.appendChild(tr);
       });
     }
 
-    // ── Email modal ──────────────────────────────────────────────────
-    async function openEmailModal(prospectId) {
-      currentProspectId = prospectId;
-      const p = prospects.find(x => x.id === prospectId);
-
-      document.getElementById('modal-business-name').textContent = p.name;
-      document.getElementById('modal-business-meta').textContent = p.address;
-
-      document.getElementById('modal-loading').classList.remove('hidden');
-      document.getElementById('modal-content').classList.add('hidden');
-      document.getElementById('modal-error').classList.add('hidden');
-      document.getElementById('email-modal').classList.remove('hidden');
-
-      // Render flaws if they exist
-      const flawsSection = document.getElementById('modal-flaws-section');
-      const flawsList = document.getElementById('modal-flaws-list');
-      if (p.websiteFlaws && p.websiteFlaws.length) {
-        flawsList.innerHTML = p.websiteFlaws.map(f =>
-          `<li class="text-xs text-neutral-500 flex items-start gap-2"><span class="text-orange-400 mt-0.5">→</span>${esc(f)}</li>`
-        ).join('');
-        flawsSection.classList.remove('hidden');
-      } else {
-        flawsSection.classList.add('hidden');
-      }
-
-      if (emailCache[prospectId]) {
-        renderEmail(emailCache[prospectId]);
-        return;
-      }
-
+    async function exportCSV() {
+      const btn = document.querySelector('[onclick="exportCSV()"]');
+      const orig = btn.textContent;
+      btn.textContent = 'Saving...';
+      btn.disabled = true;
       try {
-        const calendlyUrl = document.getElementById('calendly-url').value;
-        const email = await post('/api/email', {
-          prospect: p,
-          businessType: selectedType,
-          calendlyUrl
-        });
-        emailCache[prospectId] = email;
-        renderEmail(email);
-      } catch (err) {
-        document.getElementById('modal-loading').classList.add('hidden');
-        document.getElementById('modal-error-msg').textContent = 'Failed: ' + err.message;
-        document.getElementById('modal-error').classList.remove('hidden');
+        const result = await post('/api/export', { prospects, businessType: selectedType });
+        if (result.success) {
+          btn.textContent = 'Saved!';
+          btn.classList.add('text-green-400');
+          const sub = document.getElementById('results-subtitle');
+          sub.textContent = 'Saved to "' + result.folder + '" folder on your Desktop';
+          sub.classList.add('text-green-400');
+          setTimeout(() => {
+            btn.textContent = orig; btn.disabled = false; btn.classList.remove('text-green-400');
+            sub.classList.remove('text-green-400');
+          }, 3000);
+        }
+      } catch {
+        btn.textContent = 'Error — try again';
+        setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2000);
       }
     }
 
-    function renderEmail(email) {
-      document.getElementById('modal-loading').classList.add('hidden');
-      document.getElementById('modal-subject').textContent = email.subject;
-      document.getElementById('modal-body').textContent = email.body;
-      document.getElementById('modal-content').classList.remove('hidden');
-      document.getElementById('copy-confirm').classList.add('hidden');
+    async function clearMemory() {
+      if (!confirm('This will reset memory and show all prospects again — including ones you\'ve already found. Continue?')) return;
+      await fetch('/api/seen', { method: 'DELETE' });
+      document.getElementById('seen-count').textContent = '';
+      alert('Memory cleared.');
     }
 
-    async function regenerateEmail() {
-      if (!currentProspectId) return;
-      delete emailCache[currentProspectId];
-      await openEmailModal(currentProspectId);
-    }
-
-    function copyEmail() {
-      const subject = document.getElementById('modal-subject').textContent;
-      const body = document.getElementById('modal-body').textContent;
-      navigator.clipboard.writeText('Subject: ' + subject + '\n\n' + body).then(() => {
-        const confirm = document.getElementById('copy-confirm');
-        confirm.classList.remove('hidden');
-        setTimeout(() => confirm.classList.add('hidden'), 2500);
-      });
-    }
-
-    function closeModal() {
-      document.getElementById('email-modal').classList.add('hidden');
-      currentProspectId = null;
-    }
-
-    function handleModalBackdrop(e) {
-      if (e.target === e.currentTarget) closeModal();
-    }
-
-    // ── CSV Export ───────────────────────────────────────────────────
-    function exportCSV() {
-      const headers = ['Rank', 'Business Name', 'Address', 'Phone', 'Website', 'Has Real Website', 'Site Score', 'Conversion %', 'Website Flaws', 'Email Subject', 'Email Body'];
-      const rows = [headers];
-
-      prospects.forEach((p, i) => {
-        const email = emailCache[p.id] || {};
-        rows.push([
-          i + 1,
-          p.name,
-          p.address,
-          p.phone || '',
-          p.website || '',
-          p.hasRealWebsite ? 'Yes' : (p.hasSocialOnly ? 'Social Only' : 'No'),
-          p.websiteScore != null ? p.websiteScore : '',
-          p.conversionScore + '%',
-          (p.websiteFlaws || []).join('; '),
-          email.subject || '',
-          email.body || ''
-        ]);
-      });
-
-      const csv = rows.map(row =>
-        row.map(cell => '"' + String(cell).replace(/"/g, '""') + '"').join(',')
-      ).join('\n');
-
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'prospects-' + new Date().toISOString().slice(0, 10) + '.csv';
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    // ── Reset ────────────────────────────────────────────────────────
     function resetTool() {
       prospects = [];
-      emailCache = {};
       document.getElementById('progress-log').innerHTML = '';
       document.getElementById('config-section').classList.remove('hidden');
       document.getElementById('progress-section').classList.add('hidden');
